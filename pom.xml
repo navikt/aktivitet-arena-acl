@@ -19,9 +19,9 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <kotlin.code.style>official</kotlin.code.style>
-        <kotlin.compiler.jvmTarget>17</kotlin.compiler.jvmTarget>
-        <kotlin.version>1.9.0</kotlin.version>
-        <java.version>17</java.version>
+        <kotlin.compiler.jvmTarget>21</kotlin.compiler.jvmTarget>
+        <kotlin.version>2.0.20</kotlin.version>
+        <java.version>21</java.version>
 
         <common.version>3.2024.04.22_13.50-7815154a2573</common.version>
         <kotest.version>5.0.0.M2</kotest.version>
