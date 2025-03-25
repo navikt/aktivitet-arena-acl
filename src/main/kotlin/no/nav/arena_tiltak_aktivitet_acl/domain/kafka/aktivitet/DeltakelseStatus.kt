@@ -10,7 +10,8 @@ enum class DeltakelseStatus(val tekst: String, val sentiment: Sentiment ) {
 	TAKKET_JA("Takket ja", Sentiment.POSITIVE), //JATAKK
 	TAKKET_NEI("Takket nei", Sentiment.NEUTRAL), //NEITAKK
 	FATT_PLASS("Fått plass", Sentiment.POSITIVE), //TILBUD
-	VENTELISTE("Venteliste", Sentiment.NEUTRAL);
+	VENTELISTE("Venteliste", Sentiment.NEUTRAL),
+	FEILREG("Feilregistrert", Sentiment.NEGATIVE);
 
 fun toEtikett(): Etikett {
 	return Etikett(tekst = tekst, sentiment = sentiment, kode = this.name)

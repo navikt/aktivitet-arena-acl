@@ -107,6 +107,39 @@ class DeltakerIntegrationTests : IntegrationTestBase() {
 	}
 
 	@Test
+	fun `feilregistrert i arena gir avbrutt aktivitet`() {
+		val (gjennomforingId, deltakerId, gjennomforingInput, tiltak) = setup()
+		val deltakerInput = DeltakerInput(
+			tiltakDeltakelseId = deltakerId,
+			tiltakgjennomforingId = gjennomforingId,
+			innsokBegrunnelse = "innsøkbegrunnelse",
+			endretAv = Ident(ident = "SIG123"),
+			deltakerStatusKode = "GJENN",
+		)
+		val deltakerCommand = NyDeltakerCommand(deltakerInput)
+		val result = deltakerExecutor.execute(deltakerCommand)
+
+		var aktivitetId: UUID? = null
+		result.expectHandled { handledResult ->
+			handledResult.output { it.actionType shouldBe ActionType.UPSERT_AKTIVITETSKORT_V1 }
+			handledResult.aktivitetskort { it.aktivitetStatus == AktivitetStatus.GJENNOMFORES }
+			handledResult.aktivitetskort {
+				aktivitetId = it.id
+			}
+		}
+
+		val translation = hentTranslationMedRestClient(deltakerId)
+		translation shouldBe aktivitetId
+
+		val deltakerCommand2 = NyDeltakerCommand(deltakerInput.copy(deltakerStatusKode = "FEILREG"))
+		val result2: AktivitetResult = deltakerExecutor.execute(deltakerCommand2)
+		result2.expectHandled {
+			it.output { it.actionType shouldBe ActionType.UPSERT_AKTIVITETSKORT_V1 }
+			it.aktivitetskort { it.aktivitetStatus == AktivitetStatus.AVBRUTT }
+		}
+	}
+
+	@Test
 	fun `skal gi 200 når id-mapping ikke finnes (og lage mapping)`() {
 		val token = issueAzureAdM2MToken()
 		val client = IdMappingClient(port!!) { token }
