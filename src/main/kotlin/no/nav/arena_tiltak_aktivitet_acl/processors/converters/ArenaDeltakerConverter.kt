@@ -26,6 +26,7 @@ object ArenaDeltakerConverter {
 			"DELAVB" -> AktivitetStatus.AVBRUTT
 			"IKKEM" -> AktivitetStatus.AVBRUTT
 			"NEITAKK" -> AktivitetStatus.AVBRUTT
+			"FEILREG" -> AktivitetStatus.AVBRUTT
 			else -> throw IllegalArgumentException("Ugyldig arenastatus $status kan ikke konverteres")
 		}
 	}
@@ -50,6 +51,7 @@ object ArenaDeltakerConverter {
 			"AVSLAG" -> DeltakelseStatus.AVSLAG
 			"IKKEM" -> DeltakelseStatus.IKKE_MOETT
 			"NEITAKK" -> DeltakelseStatus.TAKKET_NEI
+			"FEILREG" -> DeltakelseStatus.FEILREG
 			else -> null
 		}
 	}
@@ -86,7 +88,7 @@ object ArenaDeltakerConverter {
 				toDeltakelseStatus(deltaker.deltakerStatusKode)?.toEtikett()
 			),
 			beskrivelse = if (tiltak.kode == JOBBKLUBB) gjennomforingNavn else null,
-			endretTidspunkt = deltaker.modDato ?: deltaker.regDato,
+			endretTidspunkt = deltaker.modDato,
 			endretAv = Ident(ident = deltaker.modUser ?: deltaker.regUser ?: throw IllegalArgumentException("Missing modUser")),
 			detaljer = listOfNotNull(
 				if (arrangorNavn != null) Attributt("Arrangør", arrangorNavn) else null,
