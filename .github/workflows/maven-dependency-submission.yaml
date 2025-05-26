@@ -26,4 +26,4 @@ jobs:
           distribution: temurin
           java-version: 21
       - name: Generate and submit dependency graph
-        uses: advanced-security/maven-dependency-submission-action@v4
+        uses: advanced-security/maven-dependency-submission-action@v5
