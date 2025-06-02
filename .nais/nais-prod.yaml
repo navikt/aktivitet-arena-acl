@@ -36,6 +36,10 @@ spec:
     pool: nav-prod
   secureLogs:
     enabled: true
+  observability:
+    logging:
+      destinations:
+        - id: elastic
   accessPolicy:
     inbound:
       rules:
