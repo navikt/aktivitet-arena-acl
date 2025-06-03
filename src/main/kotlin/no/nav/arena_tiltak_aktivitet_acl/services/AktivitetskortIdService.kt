@@ -25,40 +25,60 @@ open class AktivitetskortIdService(
 	val deltakerAktivitetMappingRespository: DeltakerAktivitetMappingRespository
 ) {
 	private val log = LoggerFactory.getLogger(AktivitetskortIdService::class.java)
+
+	open fun getByPeriode(deltakelseId: DeltakelseId, aktivitetKategori: AktivitetKategori, oppfolgingsperiode: Oppfolgingsperiode): DeltakerAktivitetMappingDbo? {
+		return deltakerAktivitetMappingRespository.getByPeriode(deltakelseId, aktivitetKategori, oppfolgingsperiode.uuid)
+	}
+
+	sealed class OppfolgingsPeriodeInput
+	class UkjentPerson(val deltakelseId: DeltakelseId) : OppfolgingsPeriodeInput()
+	class OppfolgingsperioderFunnet(val oppfolgingsperioder: List<Oppfolgingsperiode>): OppfolgingsPeriodeInput()
+	class PeriodeMatch(val periodeForDeltakelse: Oppfolgingsperiode,  val oppfolgingsperioder: List<Oppfolgingsperiode>): OppfolgingsPeriodeInput()
 	/**
 	 * SafeDeltakelse will make sure no other transaction is processing the same deltakelse for the duration of the ongoing transaction.
 	 * If another transaction is processing the same deltakelse (i.e. AktivitetService) this transaction will wait its turn until the other transaction is complete.
 	 * @see no.nav.arena_tiltak_aktivitet_acl.services.AktivitetService.upsert
 	 */
 	@Transactional
-	open fun getOrCreate(deltakelseId: DeltakelseId, aktivitetKategori: AktivitetKategori, allePerioder: List<Oppfolgingsperiode>): AktivitetskortIdResult {
+	open fun getOrCreate(deltakelseId: DeltakelseId, aktivitetKategori: AktivitetKategori, oppfolgingsperioder: OppfolgingsPeriodeInput): AktivitetskortIdResult {
 		// Lock on deltakelseId. Gjelder så lenge den pågående transaksjonen er aktiv.
 		advisoryLockRepository.safeDeltakelse(deltakelseId).use {
-			val trengerNyId = sjekkOmNyAktivitetsIdMåLages(deltakelseId, aktivitetKategori, allePerioder)
+			val trengerNyId = sjekkOmNyAktivitetsIdMåLages(deltakelseId, aktivitetKategori, oppfolgingsperioder)
 			when (trengerNyId) {
-				is AvsluttetPeriode -> closeClosedPerioder(allePerioder, deltakelseId, aktivitetKategori)
-				is NyPeriode -> {
-					// TODO: Insert i deltaker_aktivitet_mapping
-					deltakerAktivitetMappingRespository.upsert(
+				is AvsluttetPeriode -> {
+					settSluttdato(trengerNyId.avsluttetPeriode, deltakelseId, aktivitetKategori)
+					return Gotten(trengerNyId.sisteAktivitetskortId)
+				}
+				is NyAktivitetskortId -> {
+					deltakerAktivitetMappingRespository.insert(
 						DeltakerAktivitetMappingDbo(
 							deltakelseId = deltakelseId.value,
-							aktivitetId = UUID.randomUUID(),
+							aktivitetId = trengerNyId.forelopigAktivitetskortId.id,
 							aktivitetKategori = aktivitetKategori.name,
 							oppfolgingsPeriodeId = trengerNyId.periode.uuid,
-							oppfolgingsPeriodeSluttdato = trengerNyId.periode.sluttDato
+							oppfolgingsPeriodeSluttTidspunkt = trengerNyId.periode.sluttTidspunkt
 						)
 					)
+					forelopigAktivitetskortIdRepository.deleteDeltakelseId(deltakelseId, aktivitetKategori)
+					return Created(trengerNyId.forelopigAktivitetskortId)
 				}
-				is BareForelopigId -> return trengerNyId.forelopigAktivitetskortId.toAktivitetskortIdResult()
+				is NyPeriode -> {
+					val nyAktivitetskortId = UUID.randomUUID()
+					deltakerAktivitetMappingRespository.insert(
+						DeltakerAktivitetMappingDbo(
+							deltakelseId = deltakelseId.value,
+							aktivitetId = nyAktivitetskortId,
+							aktivitetKategori = aktivitetKategori.name,
+							oppfolgingsPeriodeId = trengerNyId.periode.uuid,
+							oppfolgingsPeriodeSluttTidspunkt = trengerNyId.periode.sluttTidspunkt
+						)
+					)
+					return Gotten(nyAktivitetskortId)
+				}
+				is BareForelopigIdManglerOppfolging -> return trengerNyId.forelopigAktivitetskortId.toAktivitetskortIdResult()
 				is IngenEndring -> return Gotten(trengerNyId.sisteAktivitetskortId)
 				is ManglerOppfolgingsPerioder -> return trengerNyId.forelopigAktivitetskortId.toAktivitetskortIdResult()
 			}
-
-//			val currentId = aktivitetRepository.getCurrentAktivitetsId(deltakelseId, aktivitetKategori)
-			val currentMapping = deltakerAktivitetMappingRespository.getCurrentDeltakerAktivitetMapping(deltakelseId, aktivitetKategori)
-			if (currentMapping != null) return Gotten(currentMapping.aktivitetId)
-			// Opprett i ny tabell
-			return forelopigAktivitetskortIdRepository.getOrCreate(deltakelseId, aktivitetKategori).toAktivitetskortIdResult()
 		}
 	}
 
@@ -72,59 +92,97 @@ open class AktivitetskortIdService(
 		}
 	}
 
-	private fun sjekkOmNyAktivitetsIdMåLages(deltakelseId: DeltakelseId, aktivitetKategori: AktivitetKategori, allePerioder: List<Oppfolgingsperiode>): TrengerNyIdResultat {
+	private fun sjekkOmNyAktivitetsIdMåLages(deltakelseId: DeltakelseId, aktivitetKategori: AktivitetKategori, periodeInput: OppfolgingsPeriodeInput): TrengerNyIdResultat {
 		val sisteAktivitet = aktivitetRepository.getCurrentAktivitetsId(deltakelseId, aktivitetKategori)
 			?.let { aktivitetRepository.getAktivitet(it) }
-		val nyestePeriode = allePerioder.maxByOrNull { it.startDato }
+
+		val sisteAktivitetsIdForDeltakelse = deltakerAktivitetMappingRespository.getCurrentDeltakerAktivitetMapping(deltakelseId, aktivitetKategori)
+		val currentOppfolgingsperiodeId = sisteAktivitetsIdForDeltakelse?.oppfolgingsPeriodeId
+
+		if (sisteAktivitet != null && sisteAktivitetsIdForDeltakelse == null) {
+			log.error("Fant opprettet aktivitetskort uten aktivitetId i mapping tabell, delatker-aktivitet mapping er ikke blitt oppdatert for deltakelseId: $deltakelseId, aktivitetKategori: $aktivitetKategori")
+			throw IllegalStateException("App må fikses!")
+		}
+
+		if (periodeInput is UkjentPerson) {
+			log.warn("Ukjent person for deltakelseId: $deltakelseId, ingen aktivitetskort eller deltakelse-aktivitet mapping funnet")
+		}
+		val allePerioder = when (periodeInput) {
+			is OppfolgingsperioderFunnet -> periodeInput.oppfolgingsperioder
+			is PeriodeMatch -> periodeInput.oppfolgingsperioder
+			is UkjentPerson -> emptyList()
+		}
+
+		val periodeForDeltakelse = when (periodeInput) {
+			is PeriodeMatch -> periodeInput.periodeForDeltakelse
+			is OppfolgingsperioderFunnet -> allePerioder.maxByOrNull { it.startTidspunkt }
+			else -> null
+		}
+
 		return when {
-			sisteAktivitet == null -> {
-				log.info("Ingen aktivitetskort opprettet for deltakelseId: $deltakelseId, gir ut foreløpig id")
-				BareForelopigId(forelopigAktivitetskortIdRepository.getOrCreate(deltakelseId, aktivitetKategori)
-					.also {
-						when (it) {
-							is NyForelopigId -> {
-								log.info("Foreløpig aktivitetskortId ble opprettet")
-							}
-							is EksisterendeForelopigId -> {
-								log.info("Foreløpig aktivitestkortId eksisterte fra før")
-							}
-						}
-					})
+			sisteAktivitetsIdForDeltakelse == null -> {
+				when (periodeForDeltakelse != null) {
+					true -> NyAktivitetskortId(
+						forelopigAktivitetskortIdRepository.getOrCreate(deltakelseId, aktivitetKategori)
+							.also { logIdMappingOpprettet(it, periodeForDeltakelse, deltakelseId) }, periodeForDeltakelse)
+					false -> BareForelopigIdManglerOppfolging(forelopigAktivitetskortIdRepository.getOrCreate(deltakelseId, aktivitetKategori)
+							.also { logOmForelopigIdBleOpprettet(it, deltakelseId) })
+				}
 			}
-			nyestePeriode == null -> {
+			periodeForDeltakelse == null -> {
 				log.info("Ingen oppfølgingsperioder funnet")
 				ManglerOppfolgingsPerioder(forelopigAktivitetskortIdRepository.getOrCreate(deltakelseId, aktivitetKategori))
 			}
-			sisteAktivitet.oppfolgingsperiodeUUID == nyestePeriode.uuid -> {
-				if (sisteAktivitet.oppfolgingsSluttTidspunkt == null && nyestePeriode.sluttDato != null) {
+			currentOppfolgingsperiodeId == periodeForDeltakelse.uuid -> {
+				if (sisteAktivitetsIdForDeltakelse.oppfolgingsPeriodeSluttTidspunkt == null && periodeForDeltakelse.sluttTidspunkt != null) {
 					log.info("Oppdaterer oppfolgingsperiode med sluttdato")
-					return AvsluttetPeriode(nyestePeriode)
+					return AvsluttetPeriode(sisteAktivitetsIdForDeltakelse.aktivitetId, AvsluttetOppfolgingsperiode(
+						uuid = periodeForDeltakelse.uuid,
+						startDato = periodeForDeltakelse.startTidspunkt,
+						sluttDato = periodeForDeltakelse.sluttTidspunkt
+					))
 				} else {
-					log.info("Returnerer siste aktivitetskortId")
-					IngenEndring(sisteAktivitet.id)
+					log.info("Returnerer siste aktivitetskortId:${sisteAktivitetsIdForDeltakelse.aktivitetId} for deltakelseId: $deltakelseId, periode: ${periodeForDeltakelse.uuid}")
+					IngenEndring(sisteAktivitetsIdForDeltakelse.aktivitetId)
 				}
 			}
 			else -> {
-				log.info("Bruker har fått ny periode siden sist aktivitetskort på deltakelse $deltakelseId ble opprettet. Oppretter nytt aktivitetskort for ny periode på samme deltakelse.")
-				NyPeriode(nyestePeriode)
+				log.info("Bruker har fått ny periode:${periodeForDeltakelse.uuid}, gammel:$currentOppfolgingsperiodeId siden sist aktivitetskortsId på deltakelse $deltakelseId ble opprettet. Oppretter ny aktivitetskortId for ny periode på samme deltakelse $deltakelseId.")
+				NyPeriode(
+					periodeForDeltakelse,
+					AvsluttetOppfolgingsperiode(
+						uuid = sisteAktivitetsIdForDeltakelse.oppfolgingsPeriodeId,
+						startDato = allePerioder.first { it.uuid == currentOppfolgingsperiodeId }.startTidspunkt,
+						sluttDato = sisteAktivitetsIdForDeltakelse.oppfolgingsPeriodeSluttTidspunkt!!
+					)
+				)
 			}
 		}
 	}
 
-	private fun closeClosedPerioder(oppfolgingsperioder: List<Oppfolgingsperiode>, deltakelseId: DeltakelseId, aktivitetKategori: AktivitetKategori) {
-		val avsluttedePerioder = oppfolgingsperioder
-			.mapNotNull {
-				it.sluttDato
-					?.let { slutt -> AvsluttetOppfolgingsperiode(it.uuid, it.startDato, slutt) }
-			}
-		aktivitetRepository.closeClosedPerioder(deltakelseId, aktivitetKategori, avsluttedePerioder)
+	private fun logOmForelopigIdBleOpprettet(forelopigAktivitetskortId: ForelopigAktivitetskortId, deltakelseId: DeltakelseId) {
+		when (forelopigAktivitetskortId) {
+			is NyForelopigId -> log.info("Foreløpig aktivitetskortId ble opprettet for person uten oppfølging deltakelseId:${deltakelseId.value}, foreløpigAktivitetskortId:${forelopigAktivitetskortId.id}")
+			is EksisterendeForelopigId -> log.info("Foreløpig aktivitestkortId eksisterte fra før på person uten oppfølging deltakelseId:${deltakelseId.value}, foreløpigAktivitetskortId:${forelopigAktivitetskortId.id}")
+		}
+	}
+
+	private fun logIdMappingOpprettet(forelopigAktivitetskortId: ForelopigAktivitetskortId, nyestePeriode: Oppfolgingsperiode, deltakelseId: DeltakelseId) {
+		when (forelopigAktivitetskortId) {
+			is NyForelopigId -> log.info("Ny foreløipig aktivitetskortId:${forelopigAktivitetskortId.id} brukt til oppretting av mapping for deltakelse:${deltakelseId.value}, periode:${nyestePeriode.uuid}")
+			is EksisterendeForelopigId -> log.info("Eksisterende aktivitestkortId:${forelopigAktivitetskortId.id} brukt for å opprette mapping på deltakelse:${deltakelseId.value} , periode:${nyestePeriode.uuid}")
+		}
+	}
+
+	private fun settSluttdato(avsluttetPeriode: AvsluttetOppfolgingsperiode, deltakelseId: DeltakelseId, aktivitetKategori: AktivitetKategori) {
+		aktivitetRepository.closeClosedPerioder(deltakelseId, aktivitetKategori, listOf(avsluttetPeriode))
 	}
 }
 
-
 sealed class TrengerNyIdResultat()
-class BareForelopigId(val forelopigAktivitetskortId: ForelopigAktivitetskortId): TrengerNyIdResultat()
+class BareForelopigIdManglerOppfolging(val forelopigAktivitetskortId: ForelopigAktivitetskortId): TrengerNyIdResultat()
 class ManglerOppfolgingsPerioder(val forelopigAktivitetskortId: ForelopigAktivitetskortId): TrengerNyIdResultat()
 class IngenEndring(val sisteAktivitetskortId: UUID) : TrengerNyIdResultat()
-class AvsluttetPeriode(val periode: Oppfolgingsperiode) : TrengerNyIdResultat()
-class NyPeriode(val periode: Oppfolgingsperiode): TrengerNyIdResultat()
+class AvsluttetPeriode(val sisteAktivitetskortId: UUID, val avsluttetPeriode: AvsluttetOppfolgingsperiode) : TrengerNyIdResultat()
+class NyPeriode(val periode: Oppfolgingsperiode, val gammelPeriode: AvsluttetOppfolgingsperiode): TrengerNyIdResultat()
+class NyAktivitetskortId(val forelopigAktivitetskortId: ForelopigAktivitetskortId, val periode: Oppfolgingsperiode): TrengerNyIdResultat()

@@ -48,8 +48,8 @@ class OppfolgingClientTest {
 
 		Assertions.assertEquals(listOf(Oppfolgingsperiode(
 			uuid = uuid,
-			startDato = startDato,
-			sluttDato = null
+			startTidspunkt = startDato,
+			sluttTidspunkt = null
 		)), client.hentOppfolgingsperioder("123"))
 	}
 

@@ -160,7 +160,7 @@ class DeltakerIntegrationTests : IntegrationTestBase() {
 		val (gjennomforingId, deltakerId, gjennomforingInput, tiltak) = setup()
 
 		val gammelPeriode = OppfolgingClientMock.defaultOppfolgingsperioder.first()
-		val opprettetTidspunkt = gammelPeriode.startDato.plusSeconds(1)
+		val opprettetTidspunkt = gammelPeriode.startTidspunkt.plusSeconds(1)
 
 		val deltakerInput = DeltakerInput(
 			tiltakDeltakelseId = deltakerId,
@@ -179,7 +179,7 @@ class DeltakerIntegrationTests : IntegrationTestBase() {
 			it.headers.tiltakKode shouldBe gjennomforingInput.tiltakKode
 			it.headers.arenaId shouldBe TILTAK_ID_PREFIX + deltakerInput.tiltakDeltakelseId
 			it.headers.oppfolgingsperiode shouldBe gammelPeriode.uuid
-			it.headers.oppfolgingsSluttDato!!.shouldBeWithin(Duration.ofMillis(1), gammelPeriode.sluttDato!!)
+			it.headers.oppfolgingsSluttDato!!.shouldBeWithin(Duration.ofMillis(1), gammelPeriode.sluttTidspunkt!!)
 		}
 	}
 
@@ -235,8 +235,8 @@ class DeltakerIntegrationTests : IntegrationTestBase() {
 	fun `skal bruker regDato til å finne oppfolgingsperiode hvis ingens finnes på modDato`() {
 		val foerstePeriode = Oppfolgingsperiode(
 			uuid = UUID.randomUUID(),
-			startDato = ZonedDateTime.now().minusDays(30),
-			sluttDato = ZonedDateTime.now().minusDays(7)
+			startTidspunkt = ZonedDateTime.now().minusDays(30),
+			sluttTidspunkt = ZonedDateTime.now().minusDays(7)
 		)
 		val arenaPersonIdent = 121212L
 		val fnr = "616161"
@@ -249,8 +249,8 @@ class DeltakerIntegrationTests : IntegrationTestBase() {
 			tiltakDeltakelseId = deltakerId,
 			tiltakgjennomforingId = gjennomforingId,
 			endretAv = Ident(ident = "SIG123"),
-			endretTidspunkt = foerstePeriode.sluttDato!!.minusDays(1).toLocalDateTime(),
-			registrertDato = foerstePeriode.sluttDato!!.plusDays(1).toLocalDateTime()
+			endretTidspunkt = foerstePeriode.sluttTidspunkt!!.minusDays(1).toLocalDateTime(),
+			registrertDato = foerstePeriode.sluttTidspunkt!!.plusDays(1).toLocalDateTime()
 		)
 		val deltakerCommand = NyDeltakerCommand(deltakerInput)
 		deltakerExecutor.execute(deltakerCommand).expectHandled {
@@ -452,8 +452,8 @@ class DeltakerIntegrationTests : IntegrationTestBase() {
 
 		val foerstePeriode = Oppfolgingsperiode(
 			uuid = UUID.randomUUID(),
-			startDato = ZonedDateTime.of(AKTIVITETSPLAN_LANSERINGSDATO.minusDays(1), ZoneId.systemDefault()),
-			sluttDato = null
+			startTidspunkt = ZonedDateTime.of(AKTIVITETSPLAN_LANSERINGSDATO.minusDays(1), ZoneId.systemDefault()),
+			sluttTidspunkt = null
 		)
 
 		val deltakerInput = DeltakerInput(
@@ -487,8 +487,8 @@ class DeltakerIntegrationTests : IntegrationTestBase() {
 
 		val foerstePeriode = Oppfolgingsperiode(
 			uuid = UUID.randomUUID(),
-			startDato = ZonedDateTime.of(AKTIVITETSPLAN_LANSERINGSDATO.minusDays(1), ZoneId.systemDefault()),
-			sluttDato = null
+			startTidspunkt = ZonedDateTime.of(AKTIVITETSPLAN_LANSERINGSDATO.minusDays(1), ZoneId.systemDefault()),
+			sluttTidspunkt = null
 		)
 
 		val deltakerInput = DeltakerInput(
@@ -522,8 +522,8 @@ class DeltakerIntegrationTests : IntegrationTestBase() {
 
 		val foerstePeriode = Oppfolgingsperiode(
 			uuid = UUID.randomUUID(),
-			startDato = ZonedDateTime.of(AKTIVITETSPLAN_LANSERINGSDATO.minusDays(1), ZoneId.systemDefault()),
-			sluttDato = null
+			startTidspunkt = ZonedDateTime.of(AKTIVITETSPLAN_LANSERINGSDATO.minusDays(1), ZoneId.systemDefault()),
+			sluttTidspunkt = null
 		)
 
 		val deltakerInput = DeltakerInput(
@@ -560,8 +560,8 @@ class DeltakerIntegrationTests : IntegrationTestBase() {
 
 		val foerstePeriode = Oppfolgingsperiode(
 			uuid = UUID.randomUUID(),
-			startDato = oppfølgingsperiodeStart,
-			sluttDato = null
+			startTidspunkt = oppfølgingsperiodeStart,
+			sluttTidspunkt = null
 		)
 
 		val deltakerInput = DeltakerInput(
@@ -605,7 +605,7 @@ class DeltakerIntegrationTests : IntegrationTestBase() {
 		gjennomforingExecutor.execute(NyGjennomforingCommand(gjennomforingInput))
 			.arenaData { it.ingestStatus shouldBe IngestStatus.HANDLED }
 
-		val endretDato = OppfolgingClientMock.defaultOppfolgingsperioder.last().startDato.toLocalDateTime()
+		val endretDato = OppfolgingClientMock.defaultOppfolgingsperioder.last().startTidspunkt.toLocalDateTime()
 		val deltakerInput = DeltakerInput(
 			tiltakDeltakelseId = deltakerId,
 			tiltakgjennomforingId = gjennomforingId,
@@ -640,7 +640,7 @@ class DeltakerIntegrationTests : IntegrationTestBase() {
 		gjennomforingExecutor.execute(NyGjennomforingCommand(gjennomforingInput))
 			.arenaData { it.ingestStatus shouldBe IngestStatus.HANDLED }
 
-		val endretDato = OppfolgingClientMock.defaultOppfolgingsperioder.last().startDato.toLocalDateTime()
+		val endretDato = OppfolgingClientMock.defaultOppfolgingsperioder.last().startTidspunkt.toLocalDateTime()
 		val deltakerInput = DeltakerInput(
 			tiltakDeltakelseId = deltakerId,
 			tiltakgjennomforingId = gjennomforingId,
@@ -673,7 +673,7 @@ class DeltakerIntegrationTests : IntegrationTestBase() {
 		gjennomforingExecutor.execute(NyGjennomforingCommand(gjennomforingInput))
 			.arenaData { it.ingestStatus shouldBe IngestStatus.HANDLED }
 
-		val endretDato = OppfolgingClientMock.defaultOppfolgingsperioder.last().startDato.toLocalDateTime()
+		val endretDato = OppfolgingClientMock.defaultOppfolgingsperioder.last().startTidspunkt.toLocalDateTime()
 
 		val deltakerInput = DeltakerInput(
 			tiltakDeltakelseId = deltakerId,
@@ -764,8 +764,8 @@ class DeltakerIntegrationTests : IntegrationTestBase() {
 		// Pågående oppfolgingsperiode blir satt
 		val gjeldendePeriode = Oppfolgingsperiode(
 			uuid = UUID.randomUUID(),
-			startDato = ZonedDateTime.now().minusDays(1),
-			sluttDato = null
+			startTidspunkt = ZonedDateTime.now().minusDays(1),
+			sluttTidspunkt = null
 		)
 		OppfolgingClientMock.oppfolgingsperioder[fnr] = listOf(gjeldendePeriode)
 
@@ -781,8 +781,8 @@ class DeltakerIntegrationTests : IntegrationTestBase() {
 		val (gjennomforingId, deltakerId, _) = setup()
 		val foerstePeriode = Oppfolgingsperiode(
 			uuid = UUID.randomUUID(),
-			startDato = ZonedDateTime.now().minusDays(5),
-			sluttDato = ZonedDateTime.now().minusDays(3)
+			startTidspunkt = ZonedDateTime.now().minusDays(5),
+			sluttTidspunkt = ZonedDateTime.now().minusDays(3)
 		)
 		val fnr = "515151"
 		OrdsClientMock.fnrHandlers[123L] = { fnr }
@@ -814,8 +814,8 @@ class DeltakerIntegrationTests : IntegrationTestBase() {
 		// Skal opprette ny aktivitet dersom oppdatering kommer på ny periode
 		val nyperiode = Oppfolgingsperiode(
 			uuid = UUID.randomUUID(),
-			startDato = ZonedDateTime.now().minusDays(1),
-			sluttDato = null
+			startTidspunkt = ZonedDateTime.now().minusDays(1),
+			sluttTidspunkt = null
 		)
 		OppfolgingClientMock.oppfolgingsperioder[fnr] = listOf(foerstePeriode, nyperiode)
 		val endretTidspunkt = LocalDateTime.now()
@@ -845,8 +845,8 @@ class DeltakerIntegrationTests : IntegrationTestBase() {
 		val (gjennomforingId, deltakerId, _) = setup()
 		val foerstePeriode = Oppfolgingsperiode(
 			uuid = UUID.randomUUID(),
-			startDato = ZonedDateTime.now().minusDays(5),
-			sluttDato = ZonedDateTime.now().minusDays(3)
+			startTidspunkt = ZonedDateTime.now().minusDays(5),
+			sluttTidspunkt = ZonedDateTime.now().minusDays(3)
 		)
 		val fnr = "515151"
 		OrdsClientMock.fnrHandlers[123L] = { fnr }
@@ -884,8 +884,8 @@ class DeltakerIntegrationTests : IntegrationTestBase() {
 		val (gjennomforingId, deltakerId, _) = setup()
 		val foerstePeriode = Oppfolgingsperiode(
 			uuid = UUID.randomUUID(),
-			startDato = ZonedDateTime.now().minusDays(5),
-			sluttDato = ZonedDateTime.now().minusDays(3)
+			startTidspunkt = ZonedDateTime.now().minusDays(5),
+			sluttTidspunkt = ZonedDateTime.now().minusDays(3)
 		)
 		val fnr = "515151"
 		OrdsClientMock.fnrHandlers[123L] = { fnr }
@@ -996,14 +996,14 @@ class DeltakerIntegrationTests : IntegrationTestBase() {
 		val (gjennomforingId, deltakerId, _) = setup()
 		val foerstePeriode = Oppfolgingsperiode(
 			uuid = UUID.randomUUID(),
-			startDato = ZonedDateTime.now().minusDays(7),
-			sluttDato = ZonedDateTime.now().minusDays(5)
+			startTidspunkt = ZonedDateTime.now().minusDays(7),
+			sluttTidspunkt = ZonedDateTime.now().minusDays(5)
 		)
 
 		val gjeldendePeriode = Oppfolgingsperiode(
 			uuid = UUID.randomUUID(),
-			startDato = ZonedDateTime.now().minusDays(3),
-			sluttDato = null
+			startTidspunkt = ZonedDateTime.now().minusDays(3),
+			sluttTidspunkt = null
 		)
 		val fnr = "515151"
 		OrdsClientMock.fnrHandlers[123L] = { fnr }
@@ -1038,8 +1038,9 @@ class DeltakerIntegrationTests : IntegrationTestBase() {
 			}
 
 		andreAktivitetsId shouldNotBe null
-		andreAktivitetsId shouldNotBe foersteAktivitetsId
-
+		withClue("Ny periode skal gi ny aktivitetsId") {
+			andreAktivitetsId shouldNotBe foersteAktivitetsId
+		}
 
 		val forsteDeltakelseSattTilRetry = NyDeltakerCommand(forsteDeltakerInput)
 		deltakerExecutor.execute(forsteDeltakelseSattTilRetry)
@@ -1086,7 +1087,9 @@ class DeltakerIntegrationTests : IntegrationTestBase() {
 		)
 		val deltakerCommand = NyDeltakerCommand(deltakerInput)
 		deltakerExecutor.execute(deltakerCommand).expectHandled { arenaData ->
-			arenaData.output.aktivitetskort.id shouldBe generertId
+			withClue("Id utlevert fra arenaid endepunkt skal være lik id til aktivitetskort som opprettes senere") {
+				arenaData.output.aktivitetskort.id shouldBe generertId
+			}
 		}
 		idMappingClient.hentMapping(TranslationQuery(deltakerId.value, AktivitetKategori.TILTAKSAKTIVITET))
 			.second shouldBe generertId

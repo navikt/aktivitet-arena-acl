@@ -49,14 +49,11 @@ class TranslationController(
 		val deltakelseId = DeltakelseId(query.arenaId)
 		val aktivitetKategori = query.aktivitetKategori
 
-		val allePerioder = finnPersonIdent(deltakelseId, query.aktivitetKategori)
+		val oppfolgingsperioder = finnPersonIdent(deltakelseId, query.aktivitetKategori)
 			?.let { personIdent -> oppfolgingsperiodeService.hentAlleOppfolgingsperioder(personIdent) }
-			?.let { oppfolgingsperioder ->
-				aktivitetService.closeClosedPerioder(deltakelseId, aktivitetKategori, oppfolgingsperioder)
-				oppfolgingsperioder
-			}
+			?.let { AktivitetskortIdService.OppfolgingsperioderFunnet(it) } ?: AktivitetskortIdService.UkjentPerson(deltakelseId)
 
-		return aktivitetskortIdService.getOrCreate(deltakelseId, aktivitetKategori, allePerioder ?: emptyList())
+		return aktivitetskortIdService.getOrCreate(deltakelseId, aktivitetKategori,  oppfolgingsperioder)
 			.let { when (it) {
 				is AktivitetskortIdService.Gotten -> it.aktivitetskortId
 				is AktivitetskortIdService.Created -> it.forelopigAktivitetskortId.id

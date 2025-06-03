@@ -41,8 +41,8 @@ open class AktivitetService(
 	open fun closeClosedPerioder(deltakelseId: DeltakelseId, aktivitetKategori: AktivitetKategori, oppfolgingsperioder: List<Oppfolgingsperiode>) {
 		val avsluttedePerioder = oppfolgingsperioder
 			.mapNotNull {
-				it.sluttDato
-					?.let { slutt -> AvsluttetOppfolgingsperiode(it.uuid, it.startDato, slutt) }
+				it.sluttTidspunkt
+					?.let { slutt -> AvsluttetOppfolgingsperiode(it.uuid, it.startTidspunkt, slutt) }
 			}
 		aktivitetRepository.closeClosedPerioder(deltakelseId, aktivitetKategori, avsluttedePerioder)
 	}

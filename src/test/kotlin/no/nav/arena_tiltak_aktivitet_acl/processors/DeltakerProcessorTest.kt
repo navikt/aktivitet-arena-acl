@@ -41,13 +41,13 @@ class DeltakerProcessorTest : FunSpec({
 	val defaultOppfolgingsperioder = listOf(
 		Oppfolgingsperiode(
 			uuid = UUID.randomUUID(),
-			startDato = ZonedDateTime.now().minusMonths(2),
-			sluttDato = ZonedDateTime.now().minusMonths(1)
+			startTidspunkt = ZonedDateTime.now().minusMonths(2),
+			sluttTidspunkt = ZonedDateTime.now().minusMonths(1)
 		),
 		Oppfolgingsperiode(
 			uuid = UUID.randomUUID(),
-			startDato = ZonedDateTime.now().minusWeeks(2),
-			sluttDato = null
+			startTidspunkt = ZonedDateTime.now().minusWeeks(2),
+			sluttTidspunkt = null
 		)
 	)
 
@@ -181,7 +181,7 @@ class DeltakerProcessorTest : FunSpec({
 	}
 
 	test("Skal opprette translation hvis regDato (opprettetTidspunkt) er innen en oppfølgingsperiode") {
-		val opprettetTidspunkt = OppfolgingClientMock.defaultOppfolgingsperioder.last().startDato.toLocalDateTime().plusSeconds(10)
+		val opprettetTidspunkt = OppfolgingClientMock.defaultOppfolgingsperioder.last().startTidspunkt.toLocalDateTime().plusSeconds(10)
 		val newDeltaker = createArenaDeltakerKafkaMessage(
 			tiltakGjennomforingArenaId = nonIgnoredGjennomforingArenaId,
 			deltakerArenaId = 1L,
@@ -208,12 +208,12 @@ class DeltakerProcessorTest : FunSpec({
 		val oppfolgingsperioder = listOf(
 			Oppfolgingsperiode(
 				uuid = UUID.randomUUID(),
-				startDato = ZonedDateTime.now().minusMonths(2),
-				sluttDato = ZonedDateTime.now().minusMonths(1)),
+				startTidspunkt = ZonedDateTime.now().minusMonths(2),
+				sluttTidspunkt = ZonedDateTime.now().minusMonths(1)),
 			Oppfolgingsperiode(
 				uuid = UUID.randomUUID(),
-				startDato = ZonedDateTime.now().minusWeeks(2),
-				sluttDato = null)
+				startTidspunkt = ZonedDateTime.now().minusWeeks(2),
+				sluttTidspunkt = null)
 		)
 		val opprettetTidspunkt = LocalDateTime.now().minusMonths(3)
 		val newDeltaker = createArenaDeltakerKafkaMessage(
@@ -230,13 +230,13 @@ class DeltakerProcessorTest : FunSpec({
 		val oppfolgingsperioder = listOf(
 			Oppfolgingsperiode(
 				uuid = UUID.randomUUID(),
-				startDato = ZonedDateTime.now().minusMonths(2),
-				sluttDato = ZonedDateTime.now().minusMonths(1)
+				startTidspunkt = ZonedDateTime.now().minusMonths(2),
+				sluttTidspunkt = ZonedDateTime.now().minusMonths(1)
 			),
 			Oppfolgingsperiode(
 				uuid = UUID.randomUUID(),
-				startDato = ZonedDateTime.now().minusWeeks(2),
-				sluttDato = null
+				startTidspunkt = ZonedDateTime.now().minusWeeks(2),
+				sluttTidspunkt = null
 			)
 		)
 

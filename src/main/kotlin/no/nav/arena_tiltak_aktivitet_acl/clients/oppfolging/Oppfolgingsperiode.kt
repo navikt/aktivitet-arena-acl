@@ -6,12 +6,12 @@ import java.util.*
 
 data class Oppfolgingsperiode (
 	val uuid: UUID,
-	val startDato: ZonedDateTime,
-	val sluttDato: ZonedDateTime?
+	val startTidspunkt: ZonedDateTime,
+	val sluttTidspunkt: ZonedDateTime?
 ) {
 	fun tidspunktInnenforPeriode(tidspunkt: ChronoZonedDateTime<*>): Boolean {
-		val startetIPeriode = tidspunkt.isAfter(startDato) || tidspunkt.isEqual(startDato)
-		val foerSluttDato = sluttDato == null || sluttDato.isAfter(tidspunkt)
+		val startetIPeriode = tidspunkt.isAfter(startTidspunkt) || tidspunkt.isEqual(startTidspunkt)
+		val foerSluttDato = sluttTidspunkt == null || sluttTidspunkt.isAfter(tidspunkt)
 		return startetIPeriode && foerSluttDato
 	}
 }

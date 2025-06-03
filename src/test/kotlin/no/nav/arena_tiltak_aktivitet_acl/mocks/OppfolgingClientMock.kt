@@ -17,13 +17,13 @@ open class OppfolgingClientMock {
 		val defaultOppfolgingsperioder = listOf(
 			Oppfolgingsperiode(
 				uuid = UUID.randomUUID(),
-				startDato = ZonedDateTime.now().minusMonths(2),
-				sluttDato = ZonedDateTime.now().minusMonths(1)
+				startTidspunkt = ZonedDateTime.now().minusMonths(2),
+				sluttTidspunkt = ZonedDateTime.now().minusMonths(1)
 			),
 			Oppfolgingsperiode(
 				uuid = UUID.randomUUID(),
-				startDato = ZonedDateTime.now().minusWeeks(2),
-				sluttDato = null
+				startTidspunkt = ZonedDateTime.now().minusWeeks(2),
+				sluttTidspunkt = null
 			)
 		)
 	}
