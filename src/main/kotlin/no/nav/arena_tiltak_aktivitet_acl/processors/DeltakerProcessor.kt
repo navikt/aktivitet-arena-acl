@@ -14,6 +14,7 @@ import no.nav.arena_tiltak_aktivitet_acl.domain.kafka.arena.tiltak.TiltakDeltake
 import no.nav.arena_tiltak_aktivitet_acl.exceptions.*
 import no.nav.arena_tiltak_aktivitet_acl.processors.converters.ArenaDeltakerConverter
 import no.nav.arena_tiltak_aktivitet_acl.repositories.ArenaDataRepository
+import no.nav.arena_tiltak_aktivitet_acl.repositories.ForelopigAktivitetskortId
 import no.nav.arena_tiltak_aktivitet_acl.repositories.GjennomforingRepository
 import no.nav.arena_tiltak_aktivitet_acl.services.*
 import no.nav.arena_tiltak_aktivitet_acl.services.OppfolgingsperiodeService.Companion.defaultSlakk
@@ -218,7 +219,7 @@ open class DeltakerProcessor(
 			// Har tidligere deltakelse på samme oppfolgingsperiode
 			eksisterendeAktivitetsId != null -> EndringsType.OppdaterAktivitet(eksisterendeAktivitetsId, skalIgnoreres)
 			// Har ingen tidligere aktivitetskort
-			oppfolgingsperiodeTilAktivitetskortId.isEmpty() -> EndringsType.NyttAktivitetskort(getAkivitetskortId(deltakelseId), periodeMatch.oppfolgingsperiode, skalIgnoreres)
+			oppfolgingsperiodeTilAktivitetskortId.isEmpty() -> EndringsType.NyttAktivitetskort(getAkivitetskortId(deltakelseId, periodeMatch.allePerioder), periodeMatch.oppfolgingsperiode, skalIgnoreres)
 			// Har tidligere deltakelse men ikke på samme oppfølgingsperiode
 			else -> {
 				EndringsType.NyttAktivitetskortByttPeriode(periodeMatch.oppfolgingsperiode, skalIgnoreres)
@@ -226,8 +227,14 @@ open class DeltakerProcessor(
 		}
 	}
 
-	fun getAkivitetskortId(deltakelseId: DeltakelseId): UUID {
-		return aktivitetskortIdService.getOrCreate(deltakelseId, AktivitetKategori.TILTAKSAKTIVITET)
+	fun getAkivitetskortId(deltakelseId: DeltakelseId, allePerioder: List<Oppfolgingsperiode>): UUID {
+		return aktivitetskortIdService.getOrCreate(deltakelseId, AktivitetKategori.TILTAKSAKTIVITET, allePerioder)
+			.let {
+				when(it) {
+					is AktivitetskortIdService.Created -> it.forelopigAktivitetskortId.id
+					is AktivitetskortIdService.Gotten -> it.aktivitetskortId
+				}
+			}
 	}
 
 	fun syncOppfolgingsperioder(deltakelseId: DeltakelseId, oppfolginsperioder: List<Oppfolgingsperiode>) {

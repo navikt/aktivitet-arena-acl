@@ -10,15 +10,15 @@ import java.util.*
 
 class AktivitetskortIdRepositoryTest : StringSpec({
 	val datasource = SingletonPostgresContainer.getDataSource()
-	lateinit var repository: AktivitetskortIdRepository
+	lateinit var repository: ForelopigAktivitetskortIdRepository
 	beforeEach {
-		repository = AktivitetskortIdRepository(NamedParameterJdbcTemplate( datasource))
+		repository = ForelopigAktivitetskortIdRepository(NamedParameterJdbcTemplate( datasource))
 	}
 	"overrideId should override" {
 		val deltakelseId = DeltakelseId()
 		val overrideUUID = UUID.randomUUID()
 		val result = repository.getOrCreate(deltakelseId, AktivitetKategori.TILTAKSAKTIVITET, overrideUUID)
-		result shouldBe overrideUUID
-		repository.getOrCreate(deltakelseId, AktivitetKategori.TILTAKSAKTIVITET) shouldBe overrideUUID
+		result.id shouldBe overrideUUID
+		repository.getOrCreate(deltakelseId, AktivitetKategori.TILTAKSAKTIVITET).id shouldBe overrideUUID
 	}
 })

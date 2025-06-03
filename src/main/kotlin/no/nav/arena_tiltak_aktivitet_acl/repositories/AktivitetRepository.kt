@@ -99,7 +99,8 @@ class AktivitetRepository(
 				oppfolgingsperiode_uuid as oppfolgingsPeriode,
 				id,
 				oppfolgingsperiode_slutt_tidspunkt,
-				COALESCE(aktivitet.oppfolgingsperiode_slutt_tidspunkt, TO_TIMESTAMP('9999', 'YYYY')) oppfolging_slutt_tidspunkt_eller_max
+				COALESCE(aktivitet.oppfolgingsperiode_slutt_tidspunkt, TO_TIMESTAMP('9999', 'YYYY')) oppfolging_slutt_tidspunkt_eller_max,
+				person_ident
 			FROM aktivitet WHERE arena_id = :arenaId
 			ORDER BY oppfolging_slutt_tidspunkt_eller_max DESC
 		""".trimIndent()
@@ -108,7 +109,8 @@ class AktivitetRepository(
 			AktivitetMetaData(
 				row.getUUID("id"),
 				row.getUUID("oppfolgingsPeriode"),
-				row.getNullableZonedDateTime("oppfolgingsperiode_slutt_tidspunkt")) }
+				row.getNullableZonedDateTime("oppfolgingsperiode_slutt_tidspunkt"),
+				row.getString("person_ident")) }
 	}
 
 	fun closeClosedPerioder(deltakelseId: DeltakelseId, aktivitetKategori: AktivitetKategori, oppfolgingsperioder: List<AvsluttetOppfolgingsperiode>) {
@@ -145,4 +147,5 @@ data class AktivitetMetaData(
 	val id: UUID,
 	val oppfolgingsPeriode: UUID,
 	val oppfolgingsperiodeSlutt: ZonedDateTime?,
+	val person_ident: String,
 )

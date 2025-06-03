@@ -56,8 +56,9 @@ class DeltakerProcessorTest : FunSpec({
 	lateinit var arenaDataRepository: ArenaDataRepository
 	lateinit var personSporingRepository: PersonSporingRepository
 	lateinit var aktivitetRepository: AktivitetRepository
-	lateinit var aktivitetskortIdRespository: AktivitetskortIdRepository
+	lateinit var aktivitetskortIdRespository: ForelopigAktivitetskortIdRepository
 	lateinit var advisoryLockRepository: AdvisoryLockRepository
+	lateinit var deltakerAktivitetMapping: DeltakerAktivitetMappingRespository
 
 	// Se SQL inserted før hver test
 	val nonIgnoredGjennomforingArenaId = 1L
@@ -68,8 +69,9 @@ class DeltakerProcessorTest : FunSpec({
 		arenaDataRepository = ArenaDataRepository(template)
 		personSporingRepository = PersonSporingRepository(template)
 		aktivitetRepository = AktivitetRepository(template)
-		aktivitetskortIdRespository = AktivitetskortIdRepository(template)
+		aktivitetskortIdRespository = ForelopigAktivitetskortIdRepository(template)
 		advisoryLockRepository = AdvisoryLockRepository(template)
+		deltakerAktivitetMapping = DeltakerAktivitetMappingRespository(template)
 		clearMocks(kafkaProducerService)
 
 		DatabaseTestUtils.cleanAndInitDatabase(dataSource, "/deltaker-processor_test-data.sql")
@@ -84,12 +86,14 @@ class DeltakerProcessorTest : FunSpec({
 		return DeltakerProcessor(
 			arenaDataRepository = arenaDataRepository,
 			kafkaProducerService = kafkaProducerService,
-			aktivitetService = AktivitetService(AktivitetRepository(template), AktivitetskortIdRepository(template), AdvisoryLockRepository(template)),
+			aktivitetService = AktivitetService(aktivitetRepository, aktivitetskortIdRespository, advisoryLockRepository,
+				deltakerAktivitetMapping
+			),
 			gjennomforingRepository = GjennomforingRepository(template),
 			tiltakService = TiltakService(TiltakRepository(template)),
 			oppfolgingsperiodeService = OppfolgingsperiodeService(oppfolgingClient),
 			personsporingService = PersonsporingService(personSporingRepository, ordsClient),
-			aktivitetskortIdService = AktivitetskortIdService(aktivitetRepository, aktivitetskortIdRespository, advisoryLockRepository)
+			aktivitetskortIdService = AktivitetskortIdService(aktivitetRepository, aktivitetskortIdRespository, advisoryLockRepository, deltakerAktivitetMapping)
 		)
 	}
 

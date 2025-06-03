@@ -1,5 +1,6 @@
 package no.nav.arena_tiltak_aktivitet_acl.integration
 
+import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.date.shouldBeWithin
 import io.kotest.matchers.shouldBe
@@ -807,7 +808,9 @@ class DeltakerIntegrationTests : IntegrationTestBase() {
 					aktivitetsId1 = it.id
 				}
 			}
-		hentTranslationMedRestClient(deltakerId) shouldBe aktivitetsId1
+		withClue("ArenaId-endepunkt skal returnere samme aktivitetsId som aktiviteten har") {
+			hentTranslationMedRestClient(deltakerId) shouldBe aktivitetsId1
+		}
 		// Skal opprette ny aktivitet dersom oppdatering kommer på ny periode
 		val nyperiode = Oppfolgingsperiode(
 			uuid = UUID.randomUUID(),
@@ -829,8 +832,12 @@ class DeltakerIntegrationTests : IntegrationTestBase() {
 					aktivitetsId2 = it.id
 				}
 			}
-		aktivitetsId1 shouldNotBe aktivitetsId2
-		hentTranslationMedRestClient(deltakerId) shouldBe aktivitetsId2
+		withClue("Skal opprette nytt kort, ikke gjenbruke gammel id") {
+			aktivitetsId1 shouldNotBe aktivitetsId2
+		}
+		withClue("Skal gi ut ny id på arenaid endepunkt") {
+			hentTranslationMedRestClient(deltakerId) shouldBe aktivitetsId2
+		}
 	}
 
 	@Test

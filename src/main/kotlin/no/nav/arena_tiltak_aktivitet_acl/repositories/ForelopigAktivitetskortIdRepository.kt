@@ -8,8 +8,12 @@ import org.springframework.stereotype.Component
 import java.lang.IllegalStateException
 import java.util.*
 
+sealed class ForelopigAktivitetskortId(val id: UUID)
+class EksisterendeForelopigId(id: UUID) : ForelopigAktivitetskortId(id)
+class NyForelopigId(id: UUID) : ForelopigAktivitetskortId(id)
+
 @Component
-class AktivitetskortIdRepository(
+class ForelopigAktivitetskortIdRepository(
 	private val template: NamedParameterJdbcTemplate
 ) {
 
@@ -24,7 +28,7 @@ class AktivitetskortIdRepository(
 			))
 	}
 
-	fun getOrCreate(deltakelseId: DeltakelseId, aktivitetKategori: AktivitetKategori, idOverride: UUID? = null): UUID {
+	fun getOrCreate(deltakelseId: DeltakelseId, aktivitetKategori: AktivitetKategori, idOverride: UUID? = null): ForelopigAktivitetskortId {
 		val currentId = getCurrentId(deltakelseId, aktivitetKategori)
 		if (idOverride != null && currentId != null && idOverride != currentId)
 			throw IllegalStateException("Mismatch på id-override idOverride: $idOverride eksisterendeId: $currentId")
@@ -40,12 +44,12 @@ class AktivitetskortIdRepository(
 				"kategori" to aktivitetKategori.name,
 				"deltakelseId" to deltakelseId.value,
 			))
-		return generatedId
+		return NyForelopigId(generatedId)
 	}
 
 
 
-	private fun getCurrentId(deltakelseId: DeltakelseId, aktivitetKategori: AktivitetKategori): UUID? {
+	private fun getCurrentId(deltakelseId: DeltakelseId, aktivitetKategori: AktivitetKategori): EksisterendeForelopigId? {
 		val getCurrentId = """
 			SELECT id FROM forelopig_aktivitet_id WHERE deltakelse_id = :deltakelseId and kategori = :aktivitetKategori
 		""".trimIndent()
@@ -57,6 +61,7 @@ class AktivitetskortIdRepository(
 			)
 		) { row, _ -> row.getUUID("id") }
 			.firstOrNull()
+			?.let { EksisterendeForelopigId(it) }
 	}
 
 }

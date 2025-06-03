@@ -7,7 +7,7 @@ import no.nav.arena_tiltak_aktivitet_acl.domain.kafka.aktivitet.Operation
 import no.nav.arena_tiltak_aktivitet_acl.domain.kafka.arena.OperationPos
 import no.nav.arena_tiltak_aktivitet_acl.domain.kafka.arena.tiltak.ArenaDeltakelse
 import no.nav.arena_tiltak_aktivitet_acl.domain.kafka.arena.tiltak.DeltakelseId
-import no.nav.arena_tiltak_aktivitet_acl.repositories.AktivitetskortIdRepository
+import no.nav.arena_tiltak_aktivitet_acl.repositories.ForelopigAktivitetskortIdRepository
 import no.nav.arena_tiltak_aktivitet_acl.repositories.ArenaDataRepository
 import no.nav.arena_tiltak_aktivitet_acl.utils.ONE_MINUTE
 import no.nav.arena_tiltak_aktivitet_acl.utils.ObjectMapper
@@ -28,7 +28,7 @@ import java.lang.IllegalStateException
 class DeletedMessagesFixSchedule(
 	val historiskDeltakelseRepo: HistoriskDeltakelseRepo,
 	val arenaDataRepository: ArenaDataRepository,
-	val aktivitetskortIdRepository: AktivitetskortIdRepository,
+	val forelopigAktivitetskortIdRepository: ForelopigAktivitetskortIdRepository,
 	val leaderElectionClient: LeaderElectionClient,
 	val unleash: Unleash
 ) {
@@ -56,7 +56,7 @@ class DeletedMessagesFixSchedule(
 			is OpprettMedLegacyId -> {
 				log.info("OpprettMedLegacyId ${fix.deltakelseId}")
 				// Bruk ID-som allerede eksisterer i Veilarbaktivitet
-				aktivitetskortIdRepository.getOrCreate(fix.deltakelseId, AktivitetKategori.TILTAKSAKTIVITET, fix.funksjonellId)
+				forelopigAktivitetskortIdRepository.getOrCreate(fix.deltakelseId, AktivitetKategori.TILTAKSAKTIVITET, fix.funksjonellId)
 //				arenaDataRepository.upsertTemp(fix.toArenaDataUpsertInput())
 			}
 			is Opprett -> {
@@ -70,7 +70,7 @@ class DeletedMessagesFixSchedule(
 			}
 			is OppdaterTaptIACLMenFinnesIVeilarbaktivitet -> {
 				log.info("OppdaterTaptIACLMenFinnesIVeilarbaktivitet eksisterende deltakerid ${fix.deltakelseId}")
-				aktivitetskortIdRepository.getOrCreate(fix.deltakelseId, AktivitetKategori.TILTAKSAKTIVITET, fix.funksjonellId)
+				forelopigAktivitetskortIdRepository.getOrCreate(fix.deltakelseId, AktivitetKategori.TILTAKSAKTIVITET, fix.funksjonellId)
 				arenaDataRepository.upsertTemp(fix.toArenaDataUpsertInput())
 				historiskDeltakelseRepo.oppdaterFixMetode(fix, table)
 			}
