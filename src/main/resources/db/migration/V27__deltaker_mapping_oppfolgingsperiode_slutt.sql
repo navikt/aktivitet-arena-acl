@@ -1,0 +1,2 @@
+ALTER TABLE deltaker_aktivitet_mapping
+ADD COLUMN oppfolgingsperiode_slutttidspunkt TIMESTAMP WITH TIME ZONE;

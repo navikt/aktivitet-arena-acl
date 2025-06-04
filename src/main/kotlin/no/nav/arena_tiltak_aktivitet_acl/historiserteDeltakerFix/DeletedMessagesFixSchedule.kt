@@ -1,37 +1,24 @@
 package no.nav.arena_tiltak_aktivitet_acl.historiserteDeltakerFix
 
-import io.getunleash.Unleash
 import no.nav.arena_tiltak_aktivitet_acl.domain.db.ArenaDataDbo
-import no.nav.arena_tiltak_aktivitet_acl.domain.kafka.aktivitet.AktivitetKategori
 import no.nav.arena_tiltak_aktivitet_acl.domain.kafka.aktivitet.Operation
-import no.nav.arena_tiltak_aktivitet_acl.domain.kafka.arena.OperationPos
 import no.nav.arena_tiltak_aktivitet_acl.domain.kafka.arena.tiltak.ArenaDeltakelse
 import no.nav.arena_tiltak_aktivitet_acl.domain.kafka.arena.tiltak.DeltakelseId
-import no.nav.arena_tiltak_aktivitet_acl.repositories.ForelopigAktivitetskortIdRepository
-import no.nav.arena_tiltak_aktivitet_acl.repositories.ArenaDataRepository
-import no.nav.arena_tiltak_aktivitet_acl.utils.ONE_MINUTE
 import no.nav.arena_tiltak_aktivitet_acl.utils.ObjectMapper
-import no.nav.arena_tiltak_aktivitet_acl.utils.asBackwardsFormattedLocalDateTime
-import no.nav.common.job.JobRunner
-import no.nav.common.job.leader_election.LeaderElectionClient
-import org.slf4j.LoggerFactory
-import org.springframework.dao.IncorrectResultSizeDataAccessException
-import org.springframework.scheduling.annotation.Scheduled
-import org.springframework.stereotype.Component
-import java.lang.IllegalStateException
 
 /* Fikser deltakerlser som har blitt slettet fra tiltaksdeltaker tabellen
 * Enten har vi gått glipp av slettemelding og står i feil state
 * eller så mangler vi deltakelsen helt (feks ARENTAH fra synkrone endpunkt)
 *   */
-@Component
+//@Component
 class DeletedMessagesFixSchedule(
-	val historiskDeltakelseRepo: HistoriskDeltakelseRepo,
-	val arenaDataRepository: ArenaDataRepository,
-	val forelopigAktivitetskortIdRepository: ForelopigAktivitetskortIdRepository,
-	val leaderElectionClient: LeaderElectionClient,
-	val unleash: Unleash
+//	val historiskDeltakelseRepo: HistoriskDeltakelseRepo,
+//	val arenaDataRepository: ArenaDataRepository,
+//	val forelopigAktivitetskortIdRepository: ForelopigAktivitetskortIdRepository,
+//	val leaderElectionClient: LeaderElectionClient,
+//	val unleash: Unleash
 ) {
+	/*
 	private val log = LoggerFactory.getLogger(javaClass)
 
 	@Scheduled(initialDelay = ONE_MINUTE, fixedDelay = Long.MAX_VALUE/1_000_000)
@@ -50,6 +37,7 @@ class DeletedMessagesFixSchedule(
 				.map { fix -> utførFix(fix, HistoriskDeltakelseRepo.Table.lost_in_translation) }
 		}
 	}
+
 
 	fun utførFix(fix: FixMetode, table: HistoriskDeltakelseRepo.Table) {
 		when (fix) {
@@ -197,6 +185,7 @@ class DeletedMessagesFixSchedule(
 			.also { State.forrigeLedigeDeltakelse = it }
 			.also { log.info("Fant ledig deltakelseId: ${it.value}") }
 	}
+	 */
 }
 
 /*

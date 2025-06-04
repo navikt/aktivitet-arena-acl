@@ -11,6 +11,7 @@ import java.util.*
 
 sealed class ForelopigAktivitetskortId(val id: UUID)
 class EksisterendeForelopigId(id: UUID) : ForelopigAktivitetskortId(id)
+class FantIdITranslationTabell(id: UUID) : ForelopigAktivitetskortId(id)
 class NyForelopigId(id: UUID) : ForelopigAktivitetskortId(id)
 
 @Component
@@ -29,13 +30,15 @@ class ForelopigAktivitetskortIdRepository(
 			))
 	}
 
-	fun getOrCreate(deltakelseId: DeltakelseId, aktivitetKategori: AktivitetKategori, idOverride: UUID? = null): ForelopigAktivitetskortId {
-		val currentId = getCurrentId(deltakelseId, aktivitetKategori)
-		if (idOverride != null && currentId != null && idOverride != currentId)
-			throw IllegalStateException("Mismatch på id-override idOverride: $idOverride eksisterendeId: $currentId")
-		if (currentId != null) return currentId
+	fun getOrCreate(deltakelseId: DeltakelseId, aktivitetKategori: AktivitetKategori): ForelopigAktivitetskortId {
+		// forelopigId > translationId > opprett ny id
+		getCurrentId(deltakelseId, aktivitetKategori)?.let { return it }
+		getIdFromTranslationTable(deltakelseId, aktivitetKategori)?.let { return it }
+		createNewId(deltakelseId, aktivitetKategori).let { return it }
+	}
 
-		val generatedId = idOverride ?: UUID.randomUUID()
+	private fun createNewId(deltakelseId: DeltakelseId, aktivitetKategori: AktivitetKategori): NyForelopigId {
+		val generatedId = UUID.randomUUID()
 		val insertNewId = """
 			INSERT INTO forelopig_aktivitet_id(id, kategori, deltakelse_id) VALUES (:id, :kategori, :deltakelseId)
 		""".trimIndent()
@@ -47,8 +50,6 @@ class ForelopigAktivitetskortIdRepository(
 			))
 		return NyForelopigId(generatedId)
 	}
-
-
 
 	private fun getCurrentId(deltakelseId: DeltakelseId, aktivitetKategori: AktivitetKategori): EksisterendeForelopigId? {
 		val getCurrentId = """
@@ -63,6 +64,21 @@ class ForelopigAktivitetskortIdRepository(
 		) { row, _ -> row.getUUID("id") }
 			.firstOrNull()
 			?.let { EksisterendeForelopigId(it) }
+	}
+
+	private fun getIdFromTranslationTable(deltakelseId: DeltakelseId, aktivitetKategori: AktivitetKategori): FantIdITranslationTabell? {
+		val getIdFromTranslationTable = """
+			SELECT aktivitet_id FROM translation WHERE arena_id = :arena_id and aktivitet_kategori = :aktivitet_kategori
+		""".trimIndent()
+		return template.query(
+			getIdFromTranslationTable,
+			mapOf(
+				"arena_id" to deltakelseId.value,
+				"aktivitet_kategori" to aktivitetKategori.name
+			)
+		) { row, _ -> row.getUUID("aktivitet_id") }
+			.firstOrNull()
+			?.let { FantIdITranslationTabell(it) }
 	}
 
 }

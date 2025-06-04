@@ -27,9 +27,9 @@ open class DeltakerAktivitetMappingRespository(
 		val sql = """
 			SELECT DISTINCT ON (deltaker_id)
 				deltaker_id,
-				aktivitet_id,
+				aktivitetskort_id,
 				aktivitet_kategori,
-				oppfolgingsperiode_uuid,
+				oppfolgingsperiode_id,
 				oppfolgingsperiode_slutttidspunkt,
 				COALESCE(oppfolgingsperiode_slutttidspunkt, TO_TIMESTAMP('9999', 'YYYY')) slutt
 			FROM deltaker_aktivitet_mapping
@@ -45,19 +45,19 @@ open class DeltakerAktivitetMappingRespository(
 		val sql = """
 			SELECT
 				deltaker_id,
-				aktivitet_id,
+				aktivitetskort_id,
 				aktivitet_kategori,
-				oppfolgingsperiode_uuid,
+				oppfolgingsperiode_id,
 				oppfolgingsperiode_slutttidspunkt
 			FROM deltaker_aktivitet_mapping
 			WHERE deltaker_id = :deltaker_id
 				and aktivitet_kategori = :aktivitet_kategori
-				and oppfolgingsperiode_uuid = :oppfolgingsperiode_uuid
+				and oppfolgingsperiode_id = :oppfolgingsperiode_id
 		""".trimIndent()
 		val parameters = mapOf(
 			"deltaker_id" to deltakelseId.value,
 			"aktivitet_kategori" to aktivitetKategori.name,
-			"oppfolgingsperiode_uuid" to oppfolgingsPeriodeId
+			"oppfolgingsperiode_id" to oppfolgingsPeriodeId
 		)
 		return template.query(sql, parameters) { row, _ -> row.toDbo() }
 			.let { if (it.size > 1) throw IllegalStateException("Expected only one result, but found ${it.size}") else it }
@@ -66,14 +66,14 @@ open class DeltakerAktivitetMappingRespository(
 
 	open fun insert(dbo: DeltakerAktivitetMappingDbo): Int {
 		val sql = """
-			INSERT INTO deltaker_aktivitet_mapping(deltaker_id, aktivitet_id, aktivitet_kategori, oppfolgingsperiode_uuid, oppfolgingsperiode_slutttidspunkt)
-		 	VALUES (:deltaker_id, :aktivitet_id, :aktivitet_kategori, :oppfolgingsperiode_uuid, :oppfolgingsperiode_slutttidspunkt)
+			INSERT INTO deltaker_aktivitet_mapping(deltaker_id, aktivitetskort_id, aktivitet_kategori, oppfolgingsperiode_id, oppfolgingsperiode_slutttidspunkt)
+		 	VALUES (:deltaker_id, :aktivitet_id, :aktivitet_kategori, :oppfolgingsperiode_id, :oppfolgingsperiode_slutttidspunkt)
 		""".trimIndent()
 		val parameters = mapOf(
 			"deltaker_id" to dbo.deltakelseId,
 			"aktivitet_id" to dbo.aktivitetId,
 			"aktivitet_kategori" to dbo.aktivitetKategori,
-			"oppfolgingsperiode_uuid" to dbo.oppfolgingsPeriodeId,
+			"oppfolgingsperiode_id" to dbo.oppfolgingsPeriodeId,
 			"oppfolgingsperiode_slutttidspunkt" to dbo.oppfolgingsPeriodeSluttTidspunkt?.toOffsetDateTime(),
 		)
 		return template.update(sql, parameters)
@@ -83,9 +83,9 @@ open class DeltakerAktivitetMappingRespository(
 fun ResultSet.toDbo(): DeltakerAktivitetMappingDbo {
 	return DeltakerAktivitetMappingDbo(
 		deltakelseId = this.getLong("deltaker_id"),
-		aktivitetId = this.getUUID("aktivitet_id"),
+		aktivitetId = this.getUUID("aktivitetskort_id"),
 		aktivitetKategori = this.getString("aktivitet_kategori"),
-		oppfolgingsPeriodeId = this.getUUID("oppfolgingsperiode_uuid"),
+		oppfolgingsPeriodeId = this.getUUID("oppfolgingsperiode_id"),
 		oppfolgingsPeriodeSluttTidspunkt = this.getNullableZonedDateTime("oppfolgingsperiode_slutttidspunkt"),
 	)
 }

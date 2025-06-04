@@ -9,6 +9,7 @@ import no.nav.arena_tiltak_aktivitet_acl.repositories.AktivitetRepository
 import no.nav.arena_tiltak_aktivitet_acl.repositories.DeltakerAktivitetMappingDbo
 import no.nav.arena_tiltak_aktivitet_acl.repositories.DeltakerAktivitetMappingRespository
 import no.nav.arena_tiltak_aktivitet_acl.repositories.EksisterendeForelopigId
+import no.nav.arena_tiltak_aktivitet_acl.repositories.FantIdITranslationTabell
 import no.nav.arena_tiltak_aktivitet_acl.repositories.ForelopigAktivitetskortId
 import no.nav.arena_tiltak_aktivitet_acl.repositories.ForelopigAktivitetskortIdRepository
 import no.nav.arena_tiltak_aktivitet_acl.repositories.NyForelopigId
@@ -51,15 +52,15 @@ open class AktivitetskortIdService(
 					/* Etter at man inserter i deltakerAktivitetMappingRespository er ikke id-en lenger foreløpig */
 					return Created(trengerNyId.forelopigAktivitetskortId.id)
 				}
-				is NyPeriode -> {
+				is NyPeriodeSplitt -> {
 					val nyAktivitetskortId = UUID.randomUUID()
 					deltakerAktivitetMappingRespository.insert(trengerNyId.toDbo(nyAktivitetskortId))
 					settSluttdato(trengerNyId.gammelPeriode, arenaId)
 					return Created(nyAktivitetskortId)
 				}
 				is BareForelopigIdManglerOppfolgingsperiodeForDeltakelse -> return trengerNyId.forelopigAktivitetskortId.toAktivitetskortIdResult()
-				is IngenEndring -> return Gotten(trengerNyId.sisteAktivitetskortId)
-				is ManglerOppfolgingsPerioder -> return Gotten(trengerNyId.aktivitetskortId)
+				is EksisterendeId -> return Gotten(trengerNyId.sisteAktivitetskortId)
+				is EksisterendeIdManglerOppfolgingsPeriodeInput -> return Gotten(trengerNyId.aktivitetskortId)
 			}
 		}
 	}
@@ -73,6 +74,7 @@ open class AktivitetskortIdService(
 		return when (this) {
 			is NyForelopigId -> Forelopig(this)
 			is EksisterendeForelopigId -> Forelopig(this)
+			is FantIdITranslationTabell -> AktivitetskortIdService.Forelopig(this)
 		}
 	}
 
@@ -80,10 +82,10 @@ open class AktivitetskortIdService(
 		val sisteAktivitet = aktivitetRepository.getCurrentAktivitetsId(arenaId.deltakelseId, arenaId.aktivitetKategori)
 			?.let { aktivitetRepository.getAktivitet(it) }
 
-		val sisteAktivitetskort = deltakerAktivitetMappingRespository.getCurrentDeltakerAktivitetMapping(arenaId.deltakelseId, arenaId.aktivitetKategori)
-		val currentOppfolgingsperiodeId = sisteAktivitetskort?.oppfolgingsPeriodeId
+		val sisteAktivitetskortId = deltakerAktivitetMappingRespository.getCurrentDeltakerAktivitetMapping(arenaId.deltakelseId, arenaId.aktivitetKategori)
+		val currentOppfolgingsperiodeId = sisteAktivitetskortId?.oppfolgingsPeriodeId
 
-		if (sisteAktivitet != null && sisteAktivitetskort == null) {
+		if (sisteAktivitet != null && sisteAktivitetskortId == null) {
 			log.error("Fant opprettet aktivitetskort uten aktivitetId i mapping tabell, delatker-aktivitet mapping er ikke blitt oppdatert for deltakelseId: ${arenaId.deltakelseId.value}")
 			throw IllegalStateException("App må fikses!")
 		}
@@ -105,11 +107,19 @@ open class AktivitetskortIdService(
 		}
 
 		return when {
-			sisteAktivitetskort == null -> {
+			sisteAktivitetskortId == null -> {
 				when (periodeForDeltakelse != null) {
-					true -> NyAktivitetskortId(arenaId,
-						forelopigAktivitetskortIdRepository.getOrCreate(arenaId.deltakelseId, arenaId.aktivitetKategori)
-							.also { logIdMappingOpprettet(it, periodeForDeltakelse, arenaId) }, periodeForDeltakelse)
+					true -> {
+						if (periodeForDeltakelse.sluttTidspunkt != null) {
+							NyAktivitetskortId(arenaId,
+								forelopigAktivitetskortIdRepository.getOrCreate(arenaId.deltakelseId, arenaId.aktivitetKategori)
+									.also { logIdMappingOpprettet(it, periodeForDeltakelse, arenaId) }, periodeForDeltakelse)
+						} else {
+							NyAktivitetskortId(arenaId,
+								forelopigAktivitetskortIdRepository.getOrCreate(arenaId.deltakelseId, arenaId.aktivitetKategori)
+									.also { logIdMappingOpprettet(it, periodeForDeltakelse, arenaId) }, periodeForDeltakelse)
+						}
+					}
 					false -> BareForelopigIdManglerOppfolgingsperiodeForDeltakelse(arenaId, forelopigAktivitetskortIdRepository.getOrCreate(arenaId.deltakelseId, arenaId.aktivitetKategori)
 							.also { logOmForelopigIdBleOpprettet(it, arenaId) })
 				}
@@ -117,25 +127,25 @@ open class AktivitetskortIdService(
 			periodeForDeltakelse == null -> {
 				if (periodeInput is UkjentPersonIngenPerioder) log.info("Ingen oppfølgingsperioder funnet for deltakelseId: ${arenaId.deltakelseId}")
 				if (periodeInput is BrukNyestePeriode) log.info("Ingen oppfølgingsperioder funnet for deltakelseId: ${arenaId.deltakelseId}")
-				ManglerOppfolgingsPerioder(arenaId,sisteAktivitetskort.aktivitetId)
+				EksisterendeIdManglerOppfolgingsPeriodeInput(arenaId,sisteAktivitetskortId.aktivitetId)
 			}
 			currentOppfolgingsperiodeId == periodeForDeltakelse.uuid -> {
-				if (sisteAktivitetskort.oppfolgingsPeriodeSluttTidspunkt == null && periodeForDeltakelse.sluttTidspunkt != null) {
+				if (sisteAktivitetskortId.oppfolgingsPeriodeSluttTidspunkt == null && periodeForDeltakelse.sluttTidspunkt != null) {
 					log.info("Oppdaterer oppfolgingsperiode med sluttdato")
-					return AvsluttetPeriode(arenaId,sisteAktivitetskort.aktivitetId, AvsluttetOppfolgingsperiode(
+					return AvsluttetPeriode(arenaId,sisteAktivitetskortId.aktivitetId, AvsluttetOppfolgingsperiode(
 						uuid = periodeForDeltakelse.uuid,
 						startDato = periodeForDeltakelse.startTidspunkt,
 						sluttDato = periodeForDeltakelse.sluttTidspunkt
 					))
 				} else {
-					log.info("Returnerer siste aktivitetskortId:${sisteAktivitetskort.aktivitetId} for deltakelseId: ${arenaId.deltakelseId}, periode: ${periodeForDeltakelse.uuid}")
-					IngenEndring(arenaId, sisteAktivitetskort.aktivitetId)
+					log.info("Returnerer siste aktivitetskortId:${sisteAktivitetskortId.aktivitetId} for deltakelseId: ${arenaId.deltakelseId}, periode: ${periodeForDeltakelse.uuid}")
+					EksisterendeId(arenaId, sisteAktivitetskortId.aktivitetId)
 				}
 			}
 			else -> {
 				log.info("Bruker har fått ny periode:${periodeForDeltakelse.uuid}, gammel:$currentOppfolgingsperiodeId siden sist aktivitetskortsId på deltakelse ${arenaId.deltakelseId} ble opprettet. Oppretter ny aktivitetskortId for ny periode på samme deltakelse ${arenaId.deltakelseId}.")
 				val gammelPeriode = oppfolgingsperioder.first { it.uuid == currentOppfolgingsperiodeId }
-				NyPeriode(
+				NyPeriodeSplitt(
 					arenaId,
 					periodeForDeltakelse,
 					AvsluttetOppfolgingsperiode(
@@ -152,6 +162,7 @@ open class AktivitetskortIdService(
 		when (forelopigAktivitetskortId) {
 			is NyForelopigId -> log.info("Foreløpig aktivitetskortId ble opprettet for person uten oppfølging deltakelseId:${arenaId.deltakelseId.value}, foreløpigAktivitetskortId:${forelopigAktivitetskortId.id}")
 			is EksisterendeForelopigId -> log.info("Foreløpig aktivitestkortId eksisterte fra før på person uten oppfølging deltakelseId:${arenaId.deltakelseId.value}, foreløpigAktivitetskortId:${forelopigAktivitetskortId.id}")
+			is FantIdITranslationTabell -> log.info("Foreløpig aktivitestkortId ble funnet i translation tabell for person uten oppfølging deltakelseId:${arenaId.deltakelseId.value}, foreløpigAktivitetskortId:${forelopigAktivitetskortId.id}")
 		}
 	}
 
@@ -159,6 +170,7 @@ open class AktivitetskortIdService(
 		when (forelopigAktivitetskortId) {
 			is NyForelopigId -> log.info("Ny foreløipig aktivitetskortId:${forelopigAktivitetskortId.id} brukt til oppretting av mapping for deltakelse:${arenaId.deltakelseId.value}, periode:${nyestePeriode.uuid}")
 			is EksisterendeForelopigId -> log.info("Eksisterende aktivitestkortId:${forelopigAktivitetskortId.id} brukt for å opprette mapping på deltakelse:${arenaId.deltakelseId.value} , periode:${nyestePeriode.uuid}")
+			is FantIdITranslationTabell -> log.info("Foreløpig aktivitestkortId ble funnet i translation tabell for person uten oppfølging deltakelseId:${arenaId.deltakelseId.value}, foreløpigAktivitetskortId:${forelopigAktivitetskortId.id}")
 		}
 	}
 
@@ -180,10 +192,10 @@ class FerdigMatchetPeriode(val periodeForDeltakelse: Oppfolgingsperiode, val opp
 
 sealed class TrengerNyIdResultat(val arenaId: ArenaId)
 class BareForelopigIdManglerOppfolgingsperiodeForDeltakelse(arenaId: ArenaId, val forelopigAktivitetskortId: ForelopigAktivitetskortId): TrengerNyIdResultat(arenaId)
-class ManglerOppfolgingsPerioder(arenaId: ArenaId, val aktivitetskortId: UUID): TrengerNyIdResultat(arenaId)
-class IngenEndring(arenaId: ArenaId, val sisteAktivitetskortId: UUID) : TrengerNyIdResultat(arenaId)
+class EksisterendeIdManglerOppfolgingsPeriodeInput(arenaId: ArenaId, val aktivitetskortId: UUID): TrengerNyIdResultat(arenaId)
+class EksisterendeId(arenaId: ArenaId, val sisteAktivitetskortId: UUID) : TrengerNyIdResultat(arenaId)
 class AvsluttetPeriode(arenaId: ArenaId, val sisteAktivitetskortId: UUID, val avsluttetPeriode: AvsluttetOppfolgingsperiode) : TrengerNyIdResultat(arenaId)
-class NyPeriode(arenaId: ArenaId, val periode: Oppfolgingsperiode, val gammelPeriode: AvsluttetOppfolgingsperiode): TrengerNyIdResultat(arenaId)
+class NyPeriodeSplitt(arenaId: ArenaId, val periode: Oppfolgingsperiode, val gammelPeriode: AvsluttetOppfolgingsperiode): TrengerNyIdResultat(arenaId)
 class NyAktivitetskortId(
 	arenaId: ArenaId,
 	/* Denne er bare foreløpig en veldig kort periode fra man henter den ut, til den lagres i deltakerAktiviteteMapping
@@ -200,7 +212,7 @@ fun NyAktivitetskortId.toDbo(): DeltakerAktivitetMappingDbo {
 	)
 }
 
-fun NyPeriode.toDbo(nyAktivitetskortId: UUID): DeltakerAktivitetMappingDbo {
+fun NyPeriodeSplitt.toDbo(nyAktivitetskortId: UUID): DeltakerAktivitetMappingDbo {
 	return DeltakerAktivitetMappingDbo(
 		deltakelseId = arenaId.deltakelseId.value,
 		aktivitetId = nyAktivitetskortId,
