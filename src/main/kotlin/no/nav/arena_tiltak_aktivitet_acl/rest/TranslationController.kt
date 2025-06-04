@@ -51,7 +51,7 @@ class TranslationController(
 
 		val oppfolgingsperioder = finnPersonIdent(deltakelseId, query.aktivitetKategori)
 			?.let { personIdent -> oppfolgingsperiodeService.hentAlleOppfolgingsperioder(personIdent) }
-			?.let { AktivitetskortIdService.OppfolgingsperioderFunnet(it) } ?: AktivitetskortIdService.UkjentPerson(deltakelseId)
+			?.let { AktivitetskortIdService.BrukNyestePeriode(it) } ?: AktivitetskortIdService.UkjentPersonIngenPerioder(deltakelseId)
 
 		return aktivitetskortIdService.getOrCreate(deltakelseId, aktivitetKategori,  oppfolgingsperioder)
 			.let { when (it) {

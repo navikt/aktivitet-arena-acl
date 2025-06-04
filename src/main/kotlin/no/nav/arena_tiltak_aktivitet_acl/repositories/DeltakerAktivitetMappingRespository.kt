@@ -4,7 +4,6 @@ import no.nav.arena_tiltak_aktivitet_acl.domain.kafka.aktivitet.AktivitetKategor
 import no.nav.arena_tiltak_aktivitet_acl.domain.kafka.arena.tiltak.DeltakelseId
 import no.nav.arena_tiltak_aktivitet_acl.utils.getNullableZonedDateTime
 import no.nav.arena_tiltak_aktivitet_acl.utils.getUUID
-import no.nav.arena_tiltak_aktivitet_acl.utils.getZonedDateTime
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Component
 import java.sql.ResultSet
