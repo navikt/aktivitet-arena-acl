@@ -121,7 +121,6 @@ open class DeltakerProcessor(
 			oppfolgingsSluttDato = periodeMatch.oppfolgingsperiode.sluttTidspunkt
 		)
 
-		log.info("Upserter aktivitet med id:${aktivitet.id}")
 		aktivitetService.upsert(aktivitet, aktivitetskortHeaders, deltakelse.tiltakdeltakelseId, IgnorertStatus.IKKE_IGNORERT != endring.skalIgnoreres )
 
 		if (endring.skalIgnoreres == IgnorertStatus.IGNORERT_SLETTEMELDING) {
