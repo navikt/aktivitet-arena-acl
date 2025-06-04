@@ -31,7 +31,7 @@ open class AktivitetService(
 	open fun upsert(aktivitet: Aktivitetskort, headers: AktivitetskortHeaders, deltakelseId: DeltakelseId, forelopigIgnorert: Boolean = false) {
 		deltakerLockRepository.safeDeltakelse(deltakelseId).use {
 			aktivitetRepository.upsert(aktivitet.toDbo(headers, forelopigIgnorert))
-			forelopigAktivitetskortIdRepository.deleteDeltakelseId(deltakelseId, AktivitetKategori.TILTAKSAKTIVITET)
+			forelopigAktivitetskortIdRepository.deleteDeltakelseId(ArenaId(deltakelseId, AktivitetKategori.TILTAKSAKTIVITET))
 		}
 	}
 	open fun get(aktivitetId: UUID) = aktivitetRepository.getAktivitet(aktivitetId)

@@ -30,51 +30,49 @@ open class AktivitetskortIdService(
 		return deltakerAktivitetMappingRespository.getByPeriode(deltakelseId, aktivitetKategori, oppfolgingsperiode.uuid)
 	}
 
-	sealed class OppfolgingsPeriodeInput
-	class UkjentPersonIngenPerioder(val deltakelseId: DeltakelseId) : OppfolgingsPeriodeInput()
-	class BrukNyestePeriode(val oppfolgingsperioder: List<Oppfolgingsperiode>): OppfolgingsPeriodeInput()
-	class FerdigMatchetPeriode(val periodeForDeltakelse: Oppfolgingsperiode, val oppfolgingsperioder: List<Oppfolgingsperiode>): OppfolgingsPeriodeInput()
-
 	/**
 	 * SafeDeltakelse will make sure no other transaction is processing the same deltakelse for the duration of the ongoing transaction.
 	 * If another transaction is processing the same deltakelse (i.e. AktivitetService) this transaction will wait its turn until the other transaction is complete.
 	 * @see no.nav.arena_tiltak_aktivitet_acl.services.AktivitetService.upsert
 	 */
 	@Transactional
-	open fun getOrCreate(deltakelseId: DeltakelseId, aktivitetKategori: AktivitetKategori, oppfolgingsperioder: OppfolgingsPeriodeInput): AktivitetskortIdResult {
+	open fun getOrCreate(arenaId: ArenaId, oppfolgingsperioder: OppfolgingsPeriodeInput): AktivitetskortIdResult {
 		// Lock on deltakelseId. Gjelder så lenge den pågående transaksjonen er aktiv.
-		advisoryLockRepository.safeDeltakelse(deltakelseId).use {
-			val trengerNyId = sjekkOmNyAktivitetsIdMåLages(ArenaId(deltakelseId, aktivitetKategori), oppfolgingsperioder)
+		advisoryLockRepository.safeDeltakelse(arenaId.deltakelseId).use {
+			val trengerNyId = sjekkOmNyAktivitetsIdMåLages(arenaId, oppfolgingsperioder)
 			when (trengerNyId) {
 				is AvsluttetPeriode -> {
-					settSluttdato(trengerNyId.avsluttetPeriode, deltakelseId, aktivitetKategori)
+					settSluttdato(trengerNyId.avsluttetPeriode, arenaId)
 					return Gotten(trengerNyId.sisteAktivitetskortId)
 				}
 				is NyAktivitetskortId -> {
 					deltakerAktivitetMappingRespository.insert(trengerNyId.toDbo())
-					forelopigAktivitetskortIdRepository.deleteDeltakelseId(deltakelseId, aktivitetKategori)
-					return Created(trengerNyId.forelopigAktivitetskortId)
+					forelopigAktivitetskortIdRepository.deleteDeltakelseId(arenaId)
+					/* Etter at man inserter i deltakerAktivitetMappingRespository er ikke id-en lenger foreløpig */
+					return Created(trengerNyId.forelopigAktivitetskortId.id)
 				}
 				is NyPeriode -> {
 					val nyAktivitetskortId = UUID.randomUUID()
 					deltakerAktivitetMappingRespository.insert(trengerNyId.toDbo(nyAktivitetskortId))
-					settSluttdato(trengerNyId.gammelPeriode, deltakelseId, aktivitetKategori)
-					return Gotten(nyAktivitetskortId)
+					settSluttdato(trengerNyId.gammelPeriode, arenaId)
+					return Created(nyAktivitetskortId)
 				}
-				is BareForelopigIdManglerOppfolging -> return trengerNyId.forelopigAktivitetskortId.toAktivitetskortIdResult()
+				is BareForelopigIdManglerOppfolgingsperiodeForDeltakelse -> return trengerNyId.forelopigAktivitetskortId.toAktivitetskortIdResult()
 				is IngenEndring -> return Gotten(trengerNyId.sisteAktivitetskortId)
-				is ManglerOppfolgingsPerioder -> return trengerNyId.forelopigAktivitetskortId.toAktivitetskortIdResult()
+				is ManglerOppfolgingsPerioder -> return Gotten(trengerNyId.aktivitetskortId)
 			}
 		}
 	}
 
 	sealed class AktivitetskortIdResult
-	class Created(val forelopigAktivitetskortId: ForelopigAktivitetskortId): AktivitetskortIdResult()
+	class Forelopig(val forelopigAktivitetskortId: ForelopigAktivitetskortId): AktivitetskortIdResult()
+	class Created(val aktivitetskortId: UUID): AktivitetskortIdResult()
 	class Gotten(val aktivitetskortId: UUID): AktivitetskortIdResult()
+
 	fun ForelopigAktivitetskortId.toAktivitetskortIdResult(): AktivitetskortIdResult {
 		return when (this) {
-			is NyForelopigId -> Created(this)
-			is EksisterendeForelopigId -> Gotten(this.id)
+			is NyForelopigId -> Forelopig(this)
+			is EksisterendeForelopigId -> Forelopig(this)
 		}
 	}
 
@@ -112,14 +110,14 @@ open class AktivitetskortIdService(
 					true -> NyAktivitetskortId(arenaId,
 						forelopigAktivitetskortIdRepository.getOrCreate(arenaId.deltakelseId, arenaId.aktivitetKategori)
 							.also { logIdMappingOpprettet(it, periodeForDeltakelse, arenaId) }, periodeForDeltakelse)
-					false -> BareForelopigIdManglerOppfolging(arenaId, forelopigAktivitetskortIdRepository.getOrCreate(arenaId.deltakelseId, arenaId.aktivitetKategori)
+					false -> BareForelopigIdManglerOppfolgingsperiodeForDeltakelse(arenaId, forelopigAktivitetskortIdRepository.getOrCreate(arenaId.deltakelseId, arenaId.aktivitetKategori)
 							.also { logOmForelopigIdBleOpprettet(it, arenaId) })
 				}
 			}
 			periodeForDeltakelse == null -> {
 				if (periodeInput is UkjentPersonIngenPerioder) log.info("Ingen oppfølgingsperioder funnet for deltakelseId: ${arenaId.deltakelseId}")
 				if (periodeInput is BrukNyestePeriode) log.info("Ingen oppfølgingsperioder funnet for deltakelseId: ${arenaId.deltakelseId}")
-				ManglerOppfolgingsPerioder(arenaId,forelopigAktivitetskortIdRepository.getOrCreate(arenaId.deltakelseId, arenaId.aktivitetKategori))
+				ManglerOppfolgingsPerioder(arenaId,sisteAktivitetskort.aktivitetId)
 			}
 			currentOppfolgingsperiodeId == periodeForDeltakelse.uuid -> {
 				if (sisteAktivitetskort.oppfolgingsPeriodeSluttTidspunkt == null && periodeForDeltakelse.sluttTidspunkt != null) {
@@ -164,8 +162,8 @@ open class AktivitetskortIdService(
 		}
 	}
 
-	private fun settSluttdato(avsluttetPeriode: AvsluttetOppfolgingsperiode, deltakelseId: DeltakelseId, aktivitetKategori: AktivitetKategori) {
-		aktivitetRepository.closeClosedPerioder(deltakelseId, aktivitetKategori, listOf(avsluttetPeriode))
+	private fun settSluttdato(avsluttetPeriode: AvsluttetOppfolgingsperiode, arenaId: ArenaId) {
+		aktivitetRepository.closeClosedPerioder(arenaId.deltakelseId, arenaId.aktivitetKategori, listOf(avsluttetPeriode))
 	}
 }
 
@@ -175,13 +173,22 @@ data class ArenaId(
 	override fun toString() = "$aktivitetKategori$deltakelseId"
 }
 
+sealed class OppfolgingsPeriodeInput
+class UkjentPersonIngenPerioder(val deltakelseId: DeltakelseId) : OppfolgingsPeriodeInput()
+class BrukNyestePeriode(val oppfolgingsperioder: List<Oppfolgingsperiode>): OppfolgingsPeriodeInput()
+class FerdigMatchetPeriode(val periodeForDeltakelse: Oppfolgingsperiode, val oppfolgingsperioder: List<Oppfolgingsperiode>): OppfolgingsPeriodeInput()
+
 sealed class TrengerNyIdResultat(val arenaId: ArenaId)
-class BareForelopigIdManglerOppfolging(arenaId: ArenaId, val forelopigAktivitetskortId: ForelopigAktivitetskortId): TrengerNyIdResultat(arenaId)
-class ManglerOppfolgingsPerioder(arenaId: ArenaId, val forelopigAktivitetskortId: ForelopigAktivitetskortId): TrengerNyIdResultat(arenaId)
+class BareForelopigIdManglerOppfolgingsperiodeForDeltakelse(arenaId: ArenaId, val forelopigAktivitetskortId: ForelopigAktivitetskortId): TrengerNyIdResultat(arenaId)
+class ManglerOppfolgingsPerioder(arenaId: ArenaId, val aktivitetskortId: UUID): TrengerNyIdResultat(arenaId)
 class IngenEndring(arenaId: ArenaId, val sisteAktivitetskortId: UUID) : TrengerNyIdResultat(arenaId)
 class AvsluttetPeriode(arenaId: ArenaId, val sisteAktivitetskortId: UUID, val avsluttetPeriode: AvsluttetOppfolgingsperiode) : TrengerNyIdResultat(arenaId)
 class NyPeriode(arenaId: ArenaId, val periode: Oppfolgingsperiode, val gammelPeriode: AvsluttetOppfolgingsperiode): TrengerNyIdResultat(arenaId)
-class NyAktivitetskortId(arenaId: ArenaId, val forelopigAktivitetskortId: ForelopigAktivitetskortId, val periode: Oppfolgingsperiode): TrengerNyIdResultat(arenaId)
+class NyAktivitetskortId(
+	arenaId: ArenaId,
+	/* Denne er bare foreløpig en veldig kort periode fra man henter den ut, til den lagres i deltakerAktiviteteMapping
+	* Når getOrCreate returnerer er den ikke lenger foreløpig */
+	val forelopigAktivitetskortId: ForelopigAktivitetskortId, val periode: Oppfolgingsperiode): TrengerNyIdResultat(arenaId)
 
 fun NyAktivitetskortId.toDbo(): DeltakerAktivitetMappingDbo {
 	return DeltakerAktivitetMappingDbo(

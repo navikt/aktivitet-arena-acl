@@ -229,11 +229,12 @@ open class DeltakerProcessor(
 	}
 
 	fun getAkivitetskortId(deltakelseId: DeltakelseId, periodeMatch: FinnOppfolgingResult.FunnetPeriodeResult): UUID {
-		return aktivitetskortIdService.getOrCreate(deltakelseId, AktivitetKategori.TILTAKSAKTIVITET, AktivitetskortIdService.FerdigMatchetPeriode( periodeMatch.oppfolgingsperiode,  periodeMatch.allePerioder))
+		return aktivitetskortIdService.getOrCreate(ArenaId(deltakelseId, AktivitetKategori.TILTAKSAKTIVITET), FerdigMatchetPeriode( periodeMatch.oppfolgingsperiode,  periodeMatch.allePerioder))
 			.let {
 				when(it) {
-					is AktivitetskortIdService.Created -> it.forelopigAktivitetskortId.id
+					is AktivitetskortIdService.Created -> it.aktivitetskortId
 					is AktivitetskortIdService.Gotten -> it.aktivitetskortId
+					is AktivitetskortIdService.Forelopig -> it.forelopigAktivitetskortId.id
 				}
 			}
 	}

@@ -2,6 +2,7 @@ package no.nav.arena_tiltak_aktivitet_acl.repositories
 
 import no.nav.arena_tiltak_aktivitet_acl.domain.kafka.aktivitet.AktivitetKategori
 import no.nav.arena_tiltak_aktivitet_acl.domain.kafka.arena.tiltak.DeltakelseId
+import no.nav.arena_tiltak_aktivitet_acl.services.ArenaId
 import no.nav.arena_tiltak_aktivitet_acl.utils.getUUID
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Component
@@ -17,14 +18,14 @@ class ForelopigAktivitetskortIdRepository(
 	private val template: NamedParameterJdbcTemplate
 ) {
 
-	fun deleteDeltakelseId(deltakelseId: DeltakelseId, aktivitetKategori: AktivitetKategori): Int {
+	fun deleteDeltakelseId(arenaId: ArenaId): Int {
 		val sql = """
 			DELETE FROM forelopig_aktivitet_id WHERE deltakelse_id = :deltakelseId and kategori = :kategori
 		""".trimIndent()
 		return template.update(sql,
 			mapOf(
-				"kategori" to aktivitetKategori.name,
-				"deltakelseId" to deltakelseId.value,
+				"kategori" to arenaId.aktivitetKategori.name,
+				"deltakelseId" to arenaId.deltakelseId.value,
 			))
 	}
 

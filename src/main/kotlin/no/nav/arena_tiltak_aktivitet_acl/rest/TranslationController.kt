@@ -13,7 +13,10 @@ import no.nav.arena_tiltak_aktivitet_acl.domain.kafka.aktivitet.AktivitetKategor
 import no.nav.arena_tiltak_aktivitet_acl.domain.kafka.arena.tiltak.DeltakelseId
 import no.nav.arena_tiltak_aktivitet_acl.services.AktivitetService
 import no.nav.arena_tiltak_aktivitet_acl.services.AktivitetskortIdService
+import no.nav.arena_tiltak_aktivitet_acl.services.ArenaId
+import no.nav.arena_tiltak_aktivitet_acl.services.BrukNyestePeriode
 import no.nav.arena_tiltak_aktivitet_acl.services.OppfolgingsperiodeService
+import no.nav.arena_tiltak_aktivitet_acl.services.UkjentPersonIngenPerioder
 import no.nav.security.token.support.core.api.Protected
 import no.nav.security.token.support.core.api.ProtectedWithClaims
 import org.springframework.web.bind.annotation.PostMapping
@@ -46,22 +49,22 @@ class TranslationController(
 		@RequestBody query: TranslationQuery
 	): UUID {
 		authService.validerErM2MToken()
-		val deltakelseId = DeltakelseId(query.arenaId)
-		val aktivitetKategori = query.aktivitetKategori
+		val arenaId = ArenaId(DeltakelseId(query.arenaId), query.aktivitetKategori)
 
-		val oppfolgingsperioder = finnPersonIdent(deltakelseId, query.aktivitetKategori)
+		val oppfolgingsperioder = finnPersonIdent(arenaId)
 			?.let { personIdent -> oppfolgingsperiodeService.hentAlleOppfolgingsperioder(personIdent) }
-			?.let { AktivitetskortIdService.BrukNyestePeriode(it) } ?: AktivitetskortIdService.UkjentPersonIngenPerioder(deltakelseId)
+			?.let { BrukNyestePeriode(it) } ?: UkjentPersonIngenPerioder(arenaId.deltakelseId)
 
-		return aktivitetskortIdService.getOrCreate(deltakelseId, aktivitetKategori,  oppfolgingsperioder)
+		return aktivitetskortIdService.getOrCreate(arenaId, oppfolgingsperioder)
 			.let { when (it) {
 				is AktivitetskortIdService.Gotten -> it.aktivitetskortId
-				is AktivitetskortIdService.Created -> it.forelopigAktivitetskortId.id
+				is AktivitetskortIdService.Created -> it.aktivitetskortId
+				is AktivitetskortIdService.Forelopig -> it.forelopigAktivitetskortId.id
 			} }
 	}
 
-	fun finnPersonIdent(deltakelseId: DeltakelseId, aktivitetsKategori: AktivitetKategori): String? {
-		return aktivitetService.getAllBy(deltakelseId, aktivitetsKategori)
+	fun finnPersonIdent(arenaId: ArenaId): String? {
+		return aktivitetService.getAllBy(arenaId.deltakelseId, arenaId.aktivitetKategori)
 			.firstOrNull()
 			?.let { aktivitet -> return aktivitet.person_ident }
 	}
