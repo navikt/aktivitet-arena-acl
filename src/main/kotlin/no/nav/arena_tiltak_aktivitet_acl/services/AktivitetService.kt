@@ -35,8 +35,7 @@ open class AktivitetService(
 		}
 	}
 	open fun get(aktivitetId: UUID) = aktivitetRepository.getAktivitet(aktivitetId)
-	open fun getAllBy(aktivitetId: DeltakelseId, aktivitetsKategori: AktivitetKategori) =
-		aktivitetRepository.getAllBy(aktivitetId, aktivitetsKategori)
+	open fun getAllBy(arenaId: ArenaId) = aktivitetRepository.getAllBy(arenaId)
 
 	open fun closeClosedPerioder(deltakelseId: DeltakelseId, aktivitetKategori: AktivitetKategori, oppfolgingsperioder: List<Oppfolgingsperiode>) {
 		val avsluttedePerioder = oppfolgingsperioder

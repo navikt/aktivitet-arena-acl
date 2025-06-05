@@ -33,7 +33,11 @@ class ForelopigAktivitetskortIdRepository(
 	fun getOrCreate(deltakelseId: DeltakelseId, aktivitetKategori: AktivitetKategori): ForelopigAktivitetskortId {
 		// forelopigId > translationId > opprett ny id
 		getCurrentId(deltakelseId, aktivitetKategori)?.let { return it }
-		getIdFromTranslationTable(deltakelseId, aktivitetKategori)?.let { return it }
+		getIdFromTranslationTable(deltakelseId, aktivitetKategori)
+			?.let {
+				addTranslationId(deltakelseId, aktivitetKategori, it)
+				return it
+			}
 		createNewId(deltakelseId, aktivitetKategori).let { return it }
 	}
 
@@ -49,6 +53,18 @@ class ForelopigAktivitetskortIdRepository(
 				"deltakelseId" to deltakelseId.value,
 			))
 		return NyForelopigId(generatedId)
+	}
+
+	private fun addTranslationId(deltakelseId: DeltakelseId, aktivitetKategori: AktivitetKategori, translationId: FantIdITranslationTabell) {
+		val sql = """
+			INSERT INTO forelopig_aktivitet_id(id, kategori, deltakelse_id) VALUES (:id, :kategori, :deltakelseId)
+		""".trimIndent()
+		val params = mapOf(
+			"id" to translationId.id,
+			"kategori" to aktivitetKategori.name,
+			"deltakelseId" to deltakelseId.value
+		)
+		template.update(sql, params)
 	}
 
 	private fun getCurrentId(deltakelseId: DeltakelseId, aktivitetKategori: AktivitetKategori): EksisterendeForelopigId? {

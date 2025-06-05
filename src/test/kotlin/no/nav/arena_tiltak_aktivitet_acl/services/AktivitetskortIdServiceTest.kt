@@ -144,7 +144,7 @@ class AktivitetskortIdServiceTest {
 
 		val aktivitetskortIdForste = aktivitetskortIdService.getOrCreate(arenaId, BrukNyestePeriode(listOf(oppfolgingsperiode)))
 		withClue("Skal gi ut eksisteredne aktivitetskortId hvis den finnes") {
-			(aktivitetskortIdForste as AktivitetskortIdService.Gotten).aktivitetskortId shouldBe aktivitetskortId
+			(aktivitetskortIdForste as AktivitetskortIdService.Funnet).aktivitetskortId shouldBe aktivitetskortId
 		}
 	}
 
@@ -157,7 +157,7 @@ class AktivitetskortIdServiceTest {
 
 		val aktivitetskortIdForste = aktivitetskortIdService.getOrCreate(arenaId, BrukNyestePeriode(listOf(oppfolgingsperiode)))
 		withClue("Når det finnes aktivitet getOrCreate skal returnere en Created") {
-			(aktivitetskortIdForste as AktivitetskortIdService.Created).aktivitetskortId shouldBe aktivitetskortId
+			(aktivitetskortIdForste as AktivitetskortIdService.Opprettet).aktivitetskortId shouldBe aktivitetskortId
 		}
 		verify { deltakerAktivitetMappingRepository.insert(DeltakerAktivitetMappingDbo(
 			deltakelseId = arenaId.deltakelseId.value,
@@ -179,12 +179,12 @@ class AktivitetskortIdServiceTest {
 
 		val nyAktivitetskortId = aktivitetskortIdService.getOrCreate(arenaId, BrukNyestePeriode(listOf(gammelPeriode, oppfolgingsperiode)))
 		withClue("Ny periode skal gi ny id") {
-			(nyAktivitetskortId as AktivitetskortIdService.Created).aktivitetskortId shouldNotBe aktivitetskortId
+			(nyAktivitetskortId as AktivitetskortIdService.Opprettet).aktivitetskortId shouldNotBe aktivitetskortId
 		}
 		verify { deltakerAktivitetMappingRepository.insert(DeltakerAktivitetMappingDbo(
 			deltakelseId = arenaId.deltakelseId.value,
 			aktivitetKategori = arenaId.aktivitetKategori.name,
-			aktivitetId = (nyAktivitetskortId as AktivitetskortIdService.Created).aktivitetskortId,
+			aktivitetId = (nyAktivitetskortId as AktivitetskortIdService.Opprettet).aktivitetskortId,
 			oppfolgingsPeriodeId = oppfolgingsperiode.uuid,
 			oppfolgingsPeriodeSluttTidspunkt = oppfolgingsperiode.sluttTidspunkt
 		)) }
@@ -201,12 +201,12 @@ class AktivitetskortIdServiceTest {
 
 		val nyAktivitetsKortId = aktivitetskortIdService.getOrCreate(arenaId, FerdigMatchetPeriode(oppfolgingsperiode, listOf(gammelPeriode, oppfolgingsperiode)))
 		withClue("Skal gi ny id for ny periode") {
-			(nyAktivitetsKortId as AktivitetskortIdService.Created).aktivitetskortId shouldNotBe aktivitetskortId
+			(nyAktivitetsKortId as AktivitetskortIdService.Opprettet).aktivitetskortId shouldNotBe aktivitetskortId
 		}
 		verify { deltakerAktivitetMappingRepository.insert(DeltakerAktivitetMappingDbo(
 			deltakelseId = arenaId.deltakelseId.value,
 			aktivitetKategori = arenaId.aktivitetKategori.name,
-			aktivitetId = (nyAktivitetsKortId as AktivitetskortIdService.Created).aktivitetskortId,
+			aktivitetId = (nyAktivitetsKortId as AktivitetskortIdService.Opprettet).aktivitetskortId,
 			oppfolgingsPeriodeId = oppfolgingsperiode.uuid,
 			oppfolgingsPeriodeSluttTidspunkt = oppfolgingsperiode.sluttTidspunkt
 		)) }
@@ -223,7 +223,7 @@ class AktivitetskortIdServiceTest {
 
 		val nyAktivitetsKortId = aktivitetskortIdService.getOrCreate(arenaId, FerdigMatchetPeriode(gammelPeriode, listOf(gammelPeriode, oppfolgingsperiode)))
 		withClue("Skal ikke gi ny id for gammel periode") {
-			(nyAktivitetsKortId as AktivitetskortIdService.Gotten).aktivitetskortId shouldBe aktivitetskortId
+			(nyAktivitetsKortId as AktivitetskortIdService.Funnet).aktivitetskortId shouldBe aktivitetskortId
 		}
 		verify { aktivitetRepository.closeClosedPerioder(arenaId.deltakelseId, arenaId.aktivitetKategori, listOf(
 			AvsluttetOppfolgingsperiode(gammelPeriode.uuid, gammelPeriode.startTidspunkt, gammelPeriode.sluttTidspunkt!!)))
@@ -239,7 +239,7 @@ class AktivitetskortIdServiceTest {
 
 		val nyAktivitetsKortId = aktivitetskortIdService.getOrCreate(arenaId, FerdigMatchetPeriode(gammelPeriode, listOf(gammelPeriode)))
 		withClue("Skal ikke gi ny id for gammel periode") {
-			(nyAktivitetsKortId as AktivitetskortIdService.Gotten).aktivitetskortId shouldBe aktivitetskortId
+			(nyAktivitetsKortId as AktivitetskortIdService.Funnet).aktivitetskortId shouldBe aktivitetskortId
 		}
 		verify { aktivitetRepository.closeClosedPerioder(arenaId.deltakelseId, arenaId.aktivitetKategori, listOf(
 			AvsluttetOppfolgingsperiode(gammelPeriode.uuid, gammelPeriode.startTidspunkt, gammelPeriode.sluttTidspunkt!!)))
@@ -255,7 +255,7 @@ class AktivitetskortIdServiceTest {
 
 		val nyAktivitetsKortId = aktivitetskortIdService.getOrCreate(arenaId, UkjentPersonIngenPerioder(arenaId.deltakelseId))
 		withClue("Skal gi eksisterende id når ingen perioder er tilgjengelig") {
-			(nyAktivitetsKortId as AktivitetskortIdService.Gotten).aktivitetskortId shouldBe aktivitetskortId
+			(nyAktivitetsKortId as AktivitetskortIdService.Funnet).aktivitetskortId shouldBe aktivitetskortId
 		}
 	}
 
@@ -268,7 +268,7 @@ class AktivitetskortIdServiceTest {
 
 		val nyAktivitetsKortId = aktivitetskortIdService.getOrCreate(arenaId, BrukNyestePeriode(emptyList()))
 		withClue("Skal gi eksisterende id når ingen perioder er tilgjengelig") {
-			(nyAktivitetsKortId as AktivitetskortIdService.Gotten).aktivitetskortId shouldBe aktivitetskortId
+			(nyAktivitetsKortId as AktivitetskortIdService.Funnet).aktivitetskortId shouldBe aktivitetskortId
 		}
 	}
 
@@ -282,13 +282,13 @@ class AktivitetskortIdServiceTest {
 		val aktivitetskortId = aktivitetskortIdService.getOrCreate(arenaId, BrukNyestePeriode(listOf(oppfolgingsperiode)))
 
 		withClue("TranslationId skal være Created") {
-			(aktivitetskortId is AktivitetskortIdService.Created) shouldBe true
-			(aktivitetskortId as AktivitetskortIdService.Created).aktivitetskortId shouldBe translationId.id
+			(aktivitetskortId is AktivitetskortIdService.Opprettet) shouldBe true
+			(aktivitetskortId as AktivitetskortIdService.Opprettet).aktivitetskortId shouldBe translationId.id
 		}
 		verify { deltakerAktivitetMappingRepository.insert(DeltakerAktivitetMappingDbo(
 			deltakelseId = arenaId.deltakelseId.value,
 			aktivitetKategori = arenaId.aktivitetKategori.name,
-			aktivitetId = (aktivitetskortId as AktivitetskortIdService.Created).aktivitetskortId,
+			aktivitetId = (aktivitetskortId as AktivitetskortIdService.Opprettet).aktivitetskortId,
 			oppfolgingsPeriodeId = oppfolgingsperiode.uuid,
 			oppfolgingsPeriodeSluttTidspunkt = oppfolgingsperiode.sluttTidspunkt
 		)) }
@@ -296,7 +296,7 @@ class AktivitetskortIdServiceTest {
 	}
 
 	@Test
-	fun `Skal gi ut eksisterende id hvis den finnes i translation tabell - periode finnes ikke`() {
+	fun `Hvis arenaId finnes i translation-tabell, og perioder ikke er kjent skal translationId brukes som aktivitetsId og insertes i foreløpig id`() {
 		val arenaId = ArenaId(DeltakelseId(12345), AktivitetKategori.TILTAKSAKTIVITET)
 		val translationId = FantIdITranslationTabell(UUID.randomUUID())
 		gittIdFinnesBareITranslationTabell(arenaId, translationId)

@@ -44,31 +44,31 @@ open class AktivitetskortIdService(
 			when (trengerNyId) {
 				is AvsluttetPeriode -> {
 					settSluttdato(trengerNyId.avsluttetPeriode, arenaId)
-					return Gotten(trengerNyId.sisteAktivitetskortId)
+					return Funnet(trengerNyId.sisteAktivitetskortId)
 				}
 				is NyAktivitetskortId -> {
 					deltakerAktivitetMappingRespository.insert(trengerNyId.toDbo())
 					forelopigAktivitetskortIdRepository.deleteDeltakelseId(arenaId)
 					/* Etter at man inserter i deltakerAktivitetMappingRespository er ikke id-en lenger foreløpig */
-					return Created(trengerNyId.forelopigAktivitetskortId.id)
+					return Opprettet(trengerNyId.forelopigAktivitetskortId.id)
 				}
 				is NyPeriodeSplitt -> {
 					val nyAktivitetskortId = UUID.randomUUID()
 					deltakerAktivitetMappingRespository.insert(trengerNyId.toDbo(nyAktivitetskortId))
 					settSluttdato(trengerNyId.gammelPeriode, arenaId)
-					return Created(nyAktivitetskortId)
+					return Opprettet(nyAktivitetskortId)
 				}
 				is BareForelopigIdManglerOppfolgingsperiodeForDeltakelse -> return trengerNyId.forelopigAktivitetskortId.toAktivitetskortIdResult()
-				is EksisterendeId -> return Gotten(trengerNyId.sisteAktivitetskortId)
-				is EksisterendeIdManglerOppfolgingsPeriodeInput -> return Gotten(trengerNyId.aktivitetskortId)
+				is EksisterendeId -> return Funnet(trengerNyId.sisteAktivitetskortId)
+				is EksisterendeIdManglerOppfolgingsPeriodeInput -> return Funnet(trengerNyId.aktivitetskortId)
 			}
 		}
 	}
 
 	sealed class AktivitetskortIdResult
 	class Forelopig(val forelopigAktivitetskortId: ForelopigAktivitetskortId): AktivitetskortIdResult()
-	class Created(val aktivitetskortId: UUID): AktivitetskortIdResult()
-	class Gotten(val aktivitetskortId: UUID): AktivitetskortIdResult()
+	class Opprettet(val aktivitetskortId: UUID): AktivitetskortIdResult()
+	class Funnet(val aktivitetskortId: UUID): AktivitetskortIdResult()
 
 	fun ForelopigAktivitetskortId.toAktivitetskortIdResult(): AktivitetskortIdResult {
 		return when (this) {
@@ -111,14 +111,11 @@ open class AktivitetskortIdService(
 				when (periodeForDeltakelse != null) {
 					true -> {
 						if (periodeForDeltakelse.sluttTidspunkt != null) {
-							NyAktivitetskortId(arenaId,
-								forelopigAktivitetskortIdRepository.getOrCreate(arenaId.deltakelseId, arenaId.aktivitetKategori)
-									.also { logIdMappingOpprettet(it, periodeForDeltakelse, arenaId) }, periodeForDeltakelse)
-						} else {
-							NyAktivitetskortId(arenaId,
-								forelopigAktivitetskortIdRepository.getOrCreate(arenaId.deltakelseId, arenaId.aktivitetKategori)
-									.also { logIdMappingOpprettet(it, periodeForDeltakelse, arenaId) }, periodeForDeltakelse)
+							log.warn("Utleverte aktivitetskortId for oppfolgingsperiode som er avsluttet")
 						}
+						NyAktivitetskortId(arenaId,
+							forelopigAktivitetskortIdRepository.getOrCreate(arenaId.deltakelseId, arenaId.aktivitetKategori)
+								.also { logIdMappingOpprettet(it, periodeForDeltakelse, arenaId) }, periodeForDeltakelse)
 					}
 					false -> BareForelopigIdManglerOppfolgingsperiodeForDeltakelse(arenaId, forelopigAktivitetskortIdRepository.getOrCreate(arenaId.deltakelseId, arenaId.aktivitetKategori)
 							.also { logOmForelopigIdBleOpprettet(it, arenaId) })
@@ -169,8 +166,8 @@ open class AktivitetskortIdService(
 	private fun logIdMappingOpprettet(forelopigAktivitetskortId: ForelopigAktivitetskortId, nyestePeriode: Oppfolgingsperiode, arenaId: ArenaId) {
 		when (forelopigAktivitetskortId) {
 			is NyForelopigId -> log.info("Ny foreløipig aktivitetskortId:${forelopigAktivitetskortId.id} brukt til oppretting av mapping for deltakelse:${arenaId.deltakelseId.value}, periode:${nyestePeriode.uuid}")
-			is EksisterendeForelopigId -> log.info("Eksisterende aktivitestkortId:${forelopigAktivitetskortId.id} brukt for å opprette mapping på deltakelse:${arenaId.deltakelseId.value} , periode:${nyestePeriode.uuid}")
-			is FantIdITranslationTabell -> log.info("Foreløpig aktivitestkortId ble funnet i translation tabell for person uten oppfølging deltakelseId:${arenaId.deltakelseId.value}, foreløpigAktivitetskortId:${forelopigAktivitetskortId.id}")
+			is EksisterendeForelopigId -> log.info("Eksisterende aktivitestkortId:${forelopigAktivitetskortId.id} brukt for å opprette mapping på deltakelse:${arenaId.deltakelseId.value}, periode:${nyestePeriode.uuid}")
+			is FantIdITranslationTabell -> log.info("AktivitestkortId fra translation tabell brukt for å opprette mapping på deltakelseId:${arenaId.deltakelseId.value}, foreløpigAktivitetskortId:${forelopigAktivitetskortId.id}, periode:${nyestePeriode.uuid}")
 		}
 	}
 

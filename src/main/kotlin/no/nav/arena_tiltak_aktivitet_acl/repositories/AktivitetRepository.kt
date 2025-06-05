@@ -3,6 +3,7 @@ package no.nav.arena_tiltak_aktivitet_acl.repositories
 import no.nav.arena_tiltak_aktivitet_acl.clients.oppfolging.AvsluttetOppfolgingsperiode
 import no.nav.arena_tiltak_aktivitet_acl.domain.kafka.aktivitet.AktivitetKategori
 import no.nav.arena_tiltak_aktivitet_acl.domain.kafka.arena.tiltak.DeltakelseId
+import no.nav.arena_tiltak_aktivitet_acl.services.ArenaId
 import no.nav.arena_tiltak_aktivitet_acl.utils.getNullableZonedDateTime
 import no.nav.arena_tiltak_aktivitet_acl.utils.getUUID
 import org.intellij.lang.annotations.Language
@@ -92,7 +93,7 @@ class AktivitetRepository(
 			.firstOrNull()
 	}
 
-	fun getAllBy(deltakelseId: DeltakelseId, aktivitetKategori: AktivitetKategori): List<AktivitetMetaData> {
+	fun getAllBy(arendaId: ArenaId): Map<UUID, AktivitetMetaData> {
 		@Language("PostgreSQL")
 		val sql = """
 			SELECT
@@ -104,13 +105,15 @@ class AktivitetRepository(
 			FROM aktivitet WHERE arena_id = :arenaId
 			ORDER BY oppfolging_slutt_tidspunkt_eller_max DESC
 		""".trimIndent()
-		val params = mapOf("arenaId" to "${aktivitetKategori.prefix}${deltakelseId.value}")
+		val params = mapOf("arenaId" to "${arendaId.aktivitetKategori.prefix}${arendaId.deltakelseId.value}")
 		return template.query(sql, params) { row, _ ->
 			AktivitetMetaData(
 				row.getUUID("id"),
 				row.getUUID("oppfolgingsPeriode"),
 				row.getNullableZonedDateTime("oppfolgingsperiode_slutt_tidspunkt"),
 				row.getString("person_ident")) }
+			.groupBy { it.oppfolgingsPeriode }
+			.mapValues { it.value.first() }
 	}
 
 	fun closeClosedPerioder(deltakelseId: DeltakelseId, aktivitetKategori: AktivitetKategori, oppfolgingsperioder: List<AvsluttetOppfolgingsperiode>) {

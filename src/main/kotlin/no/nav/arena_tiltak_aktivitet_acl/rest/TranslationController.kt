@@ -9,7 +9,6 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import no.nav.arena_tiltak_aktivitet_acl.auth.AuthService
 import no.nav.arena_tiltak_aktivitet_acl.auth.Issuer
 import no.nav.arena_tiltak_aktivitet_acl.domain.dto.TranslationQuery
-import no.nav.arena_tiltak_aktivitet_acl.domain.kafka.aktivitet.AktivitetKategori
 import no.nav.arena_tiltak_aktivitet_acl.domain.kafka.arena.tiltak.DeltakelseId
 import no.nav.arena_tiltak_aktivitet_acl.services.AktivitetService
 import no.nav.arena_tiltak_aktivitet_acl.services.AktivitetskortIdService
@@ -57,14 +56,15 @@ class TranslationController(
 
 		return aktivitetskortIdService.getOrCreate(arenaId, oppfolgingsperioder)
 			.let { when (it) {
-				is AktivitetskortIdService.Gotten -> it.aktivitetskortId
-				is AktivitetskortIdService.Created -> it.aktivitetskortId
+				is AktivitetskortIdService.Funnet -> it.aktivitetskortId
+				is AktivitetskortIdService.Opprettet -> it.aktivitetskortId
 				is AktivitetskortIdService.Forelopig -> it.forelopigAktivitetskortId.id
 			} }
 	}
 
 	fun finnPersonIdent(arenaId: ArenaId): String? {
-		return aktivitetService.getAllBy(arenaId.deltakelseId, arenaId.aktivitetKategori)
+		return aktivitetService.getAllBy(arenaId)
+			.values
 			.firstOrNull()
 			?.let { aktivitet -> return aktivitet.person_ident }
 	}
