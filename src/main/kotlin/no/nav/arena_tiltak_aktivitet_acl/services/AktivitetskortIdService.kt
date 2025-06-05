@@ -74,7 +74,7 @@ open class AktivitetskortIdService(
 		return when (this) {
 			is NyForelopigId -> Forelopig(this)
 			is EksisterendeForelopigId -> Forelopig(this)
-			is FantIdITranslationTabell -> AktivitetskortIdService.Forelopig(this)
+			is FantIdITranslationTabell -> Forelopig(this)
 		}
 	}
 

@@ -18,6 +18,7 @@ import no.nav.arena_tiltak_aktivitet_acl.repositories.AktivitetRepository
 import no.nav.arena_tiltak_aktivitet_acl.repositories.DeltakerAktivitetMappingDbo
 import no.nav.arena_tiltak_aktivitet_acl.repositories.DeltakerAktivitetMappingRespository
 import no.nav.arena_tiltak_aktivitet_acl.repositories.EksisterendeForelopigId
+import no.nav.arena_tiltak_aktivitet_acl.repositories.FantIdITranslationTabell
 import no.nav.arena_tiltak_aktivitet_acl.repositories.ForelopigAktivitetskortId
 import no.nav.arena_tiltak_aktivitet_acl.repositories.ForelopigAktivitetskortIdRepository
 import no.nav.arena_tiltak_aktivitet_acl.repositories.NyForelopigId
@@ -82,6 +83,12 @@ class AktivitetskortIdServiceTest {
 	fun gittDeltakelseHarForeløpigId(arenaId: ArenaId, aktivitetsKortId: ForelopigAktivitetskortId) {
 		mockAktivitetRepository(arenaId, null)
 		every { forelopigIdRepository.getOrCreate(arenaId.deltakelseId, arenaId.aktivitetKategori) } returns aktivitetsKortId
+		every { deltakerAktivitetMappingRepository.getCurrentDeltakerAktivitetMapping(arenaId.deltakelseId, arenaId.aktivitetKategori) } returns null
+	}
+
+	fun gittIdFinnesBareITranslationTabell(arenaId: ArenaId, aktivitetId: FantIdITranslationTabell) {
+		mockAktivitetRepository(arenaId, null)
+		every { forelopigIdRepository.getOrCreate(arenaId.deltakelseId, arenaId.aktivitetKategori) } returns aktivitetId
 		every { deltakerAktivitetMappingRepository.getCurrentDeltakerAktivitetMapping(arenaId.deltakelseId, arenaId.aktivitetKategori) } returns null
 	}
 
@@ -263,5 +270,27 @@ class AktivitetskortIdServiceTest {
 		withClue("Skal gi eksisterende id når ingen perioder er tilgjengelig") {
 			(nyAktivitetsKortId as AktivitetskortIdService.Gotten).aktivitetskortId shouldBe aktivitetskortId
 		}
+	}
+
+	@Test
+	fun `Skal gi ut eksisterende id hvis den finnes i translation tabell`() {
+		val arenaId = ArenaId(DeltakelseId(12345), AktivitetKategori.TILTAKSAKTIVITET)
+		val oppfolgingsperiode = Oppfolgingsperiode(UUID.randomUUID(), ZonedDateTime.now(), null)
+		val translationId = FantIdITranslationTabell(UUID.randomUUID())
+		gittIdFinnesBareITranslationTabell(arenaId, translationId)
+
+		val aktivitetskortId = aktivitetskortIdService.getOrCreate(arenaId, BrukNyestePeriode(listOf(oppfolgingsperiode)))
+
+		withClue("TranslationId skal være Created") {
+			(aktivitetskortId is AktivitetskortIdService.Created) shouldBe true
+		}
+		verify { deltakerAktivitetMappingRepository.insert(DeltakerAktivitetMappingDbo(
+			deltakelseId = arenaId.deltakelseId.value,
+			aktivitetKategori = arenaId.aktivitetKategori.name,
+			aktivitetId = (aktivitetskortId as AktivitetskortIdService.Created).aktivitetskortId,
+			oppfolgingsPeriodeId = oppfolgingsperiode.uuid,
+			oppfolgingsPeriodeSluttTidspunkt = oppfolgingsperiode.sluttTidspunkt
+		)) }
+		verify { forelopigIdRepository.deleteDeltakelseId(arenaId) }
 	}
 }
