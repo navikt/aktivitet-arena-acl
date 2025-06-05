@@ -159,8 +159,8 @@ class OppfolgingsperiodeServiceTest {
 	private fun oppfperiodeDTO(startDato: ZonedDateTime, sluttDato: ZonedDateTime?): Oppfolgingsperiode {
 		return Oppfolgingsperiode(
 			uuid = UUID.randomUUID(),
-			startDato = startDato,
-			sluttDato = sluttDato
+			startTidspunkt = startDato,
+			sluttTidspunkt = sluttDato
 		)
 	}
 

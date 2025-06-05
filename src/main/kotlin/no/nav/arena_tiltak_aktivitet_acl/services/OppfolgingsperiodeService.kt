@@ -29,7 +29,7 @@ open class OppfolgingsperiodeService(
 
 	fun hentAlleOppfolgingsperioder(fnr: String): List<Oppfolgingsperiode> {
 		return oppfolgingClient.hentOppfolgingsperioder(fnr)
-			.sortedByDescending { it.startDato }
+			.sortedByDescending { it.startTidspunkt }
 	}
 
 	fun finnOppfolgingsperiode(fnr: String, tidspunkt: LocalDateTime): FinnOppfolgingResult {
@@ -48,10 +48,10 @@ open class OppfolgingsperiodeService(
 		if (oppfolgingsperiode != null) return FinnOppfolgingResult.FunnetPeriodeResult(oppfolgingsperiode, oppfolgingsperioder)
 
 		return oppfolgingsperioder
-				.filter { it.sluttDato == null || it.sluttDato.isAfter(tidspunktZDT) }
-				.minByOrNull { abs(ChronoUnit.MILLIS.between(tidspunktZDT, it.startDato)) }
+				.filter { it.sluttTidspunkt == null || it.sluttTidspunkt.isAfter(tidspunktZDT) }
+				.minByOrNull { abs(ChronoUnit.MILLIS.between(tidspunktZDT, it.startTidspunkt)) }
 				.let { periodeMatch ->
-					if (periodeMatch == null || !tidspunktRettFoerStartDatoEllerSenere(tidspunkt, periodeMatch.startDato.toLocalDateTime(), defaultSlakk)) {
+					if (periodeMatch == null || !tidspunktRettFoerStartDatoEllerSenere(tidspunkt, periodeMatch.startTidspunkt.toLocalDateTime(), defaultSlakk)) {
 						secureLog.info(
 							"Arenatiltak finn oppfølgingsperiode - tidspunkt har ingen god match på oppfølgingsperioder) - fnr={}, tidspunkt={}, oppfolgingsperioder={}",
 							fnr, tidspunkt, oppfolgingsperioder

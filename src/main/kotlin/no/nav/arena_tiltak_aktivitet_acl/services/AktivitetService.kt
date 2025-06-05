@@ -8,7 +8,8 @@ import no.nav.arena_tiltak_aktivitet_acl.domain.kafka.aktivitet.AktivitetskortHe
 import no.nav.arena_tiltak_aktivitet_acl.domain.kafka.arena.tiltak.DeltakelseId
 import no.nav.arena_tiltak_aktivitet_acl.repositories.AdvisoryLockRepository
 import no.nav.arena_tiltak_aktivitet_acl.repositories.AktivitetRepository
-import no.nav.arena_tiltak_aktivitet_acl.repositories.AktivitetskortIdRepository
+import no.nav.arena_tiltak_aktivitet_acl.repositories.ForelopigAktivitetskortIdRepository
+import no.nav.arena_tiltak_aktivitet_acl.repositories.DeltakerAktivitetMappingRespository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
@@ -17,8 +18,9 @@ import java.util.*
 @Service
 open class AktivitetService(
 	val aktivitetRepository: AktivitetRepository,
-	val aktivitetskortIdRepository: AktivitetskortIdRepository,
-	val deltakerLockRepository: AdvisoryLockRepository
+	val forelopigAktivitetskortIdRepository: ForelopigAktivitetskortIdRepository,
+	val deltakerLockRepository: AdvisoryLockRepository,
+	val deltakerAktivitetMappingRespository: DeltakerAktivitetMappingRespository
 ) {
 	/**
 	 * SafeDeltakelse will make sure no other transaction is processing the same deltakelse for the duration of the ongoing transaction.
@@ -29,18 +31,17 @@ open class AktivitetService(
 	open fun upsert(aktivitet: Aktivitetskort, headers: AktivitetskortHeaders, deltakelseId: DeltakelseId, forelopigIgnorert: Boolean = false) {
 		deltakerLockRepository.safeDeltakelse(deltakelseId).use {
 			aktivitetRepository.upsert(aktivitet.toDbo(headers, forelopigIgnorert))
-			aktivitetskortIdRepository.deleteDeltakelseId(deltakelseId, AktivitetKategori.TILTAKSAKTIVITET)
+			forelopigAktivitetskortIdRepository.deleteDeltakelseId(ArenaId(deltakelseId, AktivitetKategori.TILTAKSAKTIVITET))
 		}
 	}
 	open fun get(aktivitetId: UUID) = aktivitetRepository.getAktivitet(aktivitetId)
-	open fun getAllBy(aktivitetId: DeltakelseId, aktivitetsKategori: AktivitetKategori) =
-		aktivitetRepository.getAllBy(aktivitetId, aktivitetsKategori)
+	open fun getAllBy(arenaId: ArenaId) = aktivitetRepository.getAllBy(arenaId)
 
 	open fun closeClosedPerioder(deltakelseId: DeltakelseId, aktivitetKategori: AktivitetKategori, oppfolgingsperioder: List<Oppfolgingsperiode>) {
 		val avsluttedePerioder = oppfolgingsperioder
 			.mapNotNull {
-				it.sluttDato
-					?.let { slutt -> AvsluttetOppfolgingsperiode(it.uuid, it.startDato, slutt) }
+				it.sluttTidspunkt
+					?.let { slutt -> AvsluttetOppfolgingsperiode(it.uuid, it.startTidspunkt, slutt) }
 			}
 		aktivitetRepository.closeClosedPerioder(deltakelseId, aktivitetKategori, avsluttedePerioder)
 	}

@@ -41,13 +41,13 @@ class DeltakerProcessorTest : FunSpec({
 	val defaultOppfolgingsperioder = listOf(
 		Oppfolgingsperiode(
 			uuid = UUID.randomUUID(),
-			startDato = ZonedDateTime.now().minusMonths(2),
-			sluttDato = ZonedDateTime.now().minusMonths(1)
+			startTidspunkt = ZonedDateTime.now().minusMonths(2),
+			sluttTidspunkt = ZonedDateTime.now().minusMonths(1)
 		),
 		Oppfolgingsperiode(
 			uuid = UUID.randomUUID(),
-			startDato = ZonedDateTime.now().minusWeeks(2),
-			sluttDato = null
+			startTidspunkt = ZonedDateTime.now().minusWeeks(2),
+			sluttTidspunkt = null
 		)
 	)
 
@@ -56,8 +56,9 @@ class DeltakerProcessorTest : FunSpec({
 	lateinit var arenaDataRepository: ArenaDataRepository
 	lateinit var personSporingRepository: PersonSporingRepository
 	lateinit var aktivitetRepository: AktivitetRepository
-	lateinit var aktivitetskortIdRespository: AktivitetskortIdRepository
+	lateinit var aktivitetskortIdRespository: ForelopigAktivitetskortIdRepository
 	lateinit var advisoryLockRepository: AdvisoryLockRepository
+	lateinit var deltakerAktivitetMapping: DeltakerAktivitetMappingRespository
 
 	// Se SQL inserted før hver test
 	val nonIgnoredGjennomforingArenaId = 1L
@@ -68,8 +69,9 @@ class DeltakerProcessorTest : FunSpec({
 		arenaDataRepository = ArenaDataRepository(template)
 		personSporingRepository = PersonSporingRepository(template)
 		aktivitetRepository = AktivitetRepository(template)
-		aktivitetskortIdRespository = AktivitetskortIdRepository(template)
+		aktivitetskortIdRespository = ForelopigAktivitetskortIdRepository(template)
 		advisoryLockRepository = AdvisoryLockRepository(template)
+		deltakerAktivitetMapping = DeltakerAktivitetMappingRespository(template)
 		clearMocks(kafkaProducerService)
 
 		DatabaseTestUtils.cleanAndInitDatabase(dataSource, "/deltaker-processor_test-data.sql")
@@ -84,12 +86,14 @@ class DeltakerProcessorTest : FunSpec({
 		return DeltakerProcessor(
 			arenaDataRepository = arenaDataRepository,
 			kafkaProducerService = kafkaProducerService,
-			aktivitetService = AktivitetService(AktivitetRepository(template), AktivitetskortIdRepository(template), AdvisoryLockRepository(template)),
+			aktivitetService = AktivitetService(aktivitetRepository, aktivitetskortIdRespository, advisoryLockRepository,
+				deltakerAktivitetMapping
+			),
 			gjennomforingRepository = GjennomforingRepository(template),
 			tiltakService = TiltakService(TiltakRepository(template)),
 			oppfolgingsperiodeService = OppfolgingsperiodeService(oppfolgingClient),
 			personsporingService = PersonsporingService(personSporingRepository, ordsClient),
-			aktivitetskortIdService = AktivitetskortIdService(aktivitetRepository, aktivitetskortIdRespository, advisoryLockRepository)
+			aktivitetskortIdService = AktivitetskortIdService(aktivitetRepository, aktivitetskortIdRespository, advisoryLockRepository, deltakerAktivitetMapping)
 		)
 	}
 
@@ -177,7 +181,7 @@ class DeltakerProcessorTest : FunSpec({
 	}
 
 	test("Skal opprette translation hvis regDato (opprettetTidspunkt) er innen en oppfølgingsperiode") {
-		val opprettetTidspunkt = OppfolgingClientMock.defaultOppfolgingsperioder.last().startDato.toLocalDateTime().plusSeconds(10)
+		val opprettetTidspunkt = OppfolgingClientMock.defaultOppfolgingsperioder.last().startTidspunkt.toLocalDateTime().plusSeconds(10)
 		val newDeltaker = createArenaDeltakerKafkaMessage(
 			tiltakGjennomforingArenaId = nonIgnoredGjennomforingArenaId,
 			deltakerArenaId = 1L,
@@ -204,12 +208,12 @@ class DeltakerProcessorTest : FunSpec({
 		val oppfolgingsperioder = listOf(
 			Oppfolgingsperiode(
 				uuid = UUID.randomUUID(),
-				startDato = ZonedDateTime.now().minusMonths(2),
-				sluttDato = ZonedDateTime.now().minusMonths(1)),
+				startTidspunkt = ZonedDateTime.now().minusMonths(2),
+				sluttTidspunkt = ZonedDateTime.now().minusMonths(1)),
 			Oppfolgingsperiode(
 				uuid = UUID.randomUUID(),
-				startDato = ZonedDateTime.now().minusWeeks(2),
-				sluttDato = null)
+				startTidspunkt = ZonedDateTime.now().minusWeeks(2),
+				sluttTidspunkt = null)
 		)
 		val opprettetTidspunkt = LocalDateTime.now().minusMonths(3)
 		val newDeltaker = createArenaDeltakerKafkaMessage(
@@ -226,13 +230,13 @@ class DeltakerProcessorTest : FunSpec({
 		val oppfolgingsperioder = listOf(
 			Oppfolgingsperiode(
 				uuid = UUID.randomUUID(),
-				startDato = ZonedDateTime.now().minusMonths(2),
-				sluttDato = ZonedDateTime.now().minusMonths(1)
+				startTidspunkt = ZonedDateTime.now().minusMonths(2),
+				sluttTidspunkt = ZonedDateTime.now().minusMonths(1)
 			),
 			Oppfolgingsperiode(
 				uuid = UUID.randomUUID(),
-				startDato = ZonedDateTime.now().minusWeeks(2),
-				sluttDato = null
+				startTidspunkt = ZonedDateTime.now().minusWeeks(2),
+				sluttTidspunkt = null
 			)
 		)
 

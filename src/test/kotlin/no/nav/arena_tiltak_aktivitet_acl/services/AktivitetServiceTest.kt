@@ -16,7 +16,8 @@ import no.nav.arena_tiltak_aktivitet_acl.integration.IntegrationTestBase
 import no.nav.arena_tiltak_aktivitet_acl.repositories.AdvisoryLockRepository
 import no.nav.arena_tiltak_aktivitet_acl.repositories.AktivitetDbo
 import no.nav.arena_tiltak_aktivitet_acl.repositories.AktivitetRepository
-import no.nav.arena_tiltak_aktivitet_acl.repositories.AktivitetskortIdRepository
+import no.nav.arena_tiltak_aktivitet_acl.repositories.DeltakerAktivitetMappingRespository
+import no.nav.arena_tiltak_aktivitet_acl.repositories.ForelopigAktivitetskortIdRepository
 import no.nav.arena_tiltak_aktivitet_acl.utils.asBackwardsFormattedLocalDateTime
 import no.nav.arena_tiltak_aktivitet_acl.utils.asLocalDateTime
 import org.junit.jupiter.api.Test
@@ -38,7 +39,10 @@ class AktivitetServiceTest : IntegrationTestBase() {
 	lateinit var aktivitetRepository: AktivitetRepository
 
 	@Autowired
-	lateinit var aktivitetskortIdRepository: AktivitetskortIdRepository
+	lateinit var forelopigAktivitetskortIdRepository: ForelopigAktivitetskortIdRepository
+
+	@Autowired
+	lateinit var deltakerAktivitetMappingRespository: DeltakerAktivitetMappingRespository
 
 	@Autowired
 	lateinit var transactionTemplate: TransactionTemplate
@@ -93,8 +97,9 @@ class AktivitetServiceTest : IntegrationTestBase() {
 
 	fun firstSlowAktivitetsService() = AktivitetService(
 		slowAktivitetRepository(),
-		aktivitetskortIdRepository,
-		advisoryLockRepository
+		forelopigAktivitetskortIdRepository,
+		advisoryLockRepository,
+		deltakerAktivitetMappingRespository,
 	)
 
 	@Test

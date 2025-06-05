@@ -10,7 +10,12 @@ import no.nav.arena_tiltak_aktivitet_acl.auth.AuthService
 import no.nav.arena_tiltak_aktivitet_acl.auth.Issuer
 import no.nav.arena_tiltak_aktivitet_acl.domain.dto.TranslationQuery
 import no.nav.arena_tiltak_aktivitet_acl.domain.kafka.arena.tiltak.DeltakelseId
+import no.nav.arena_tiltak_aktivitet_acl.services.AktivitetService
 import no.nav.arena_tiltak_aktivitet_acl.services.AktivitetskortIdService
+import no.nav.arena_tiltak_aktivitet_acl.services.ArenaId
+import no.nav.arena_tiltak_aktivitet_acl.services.BrukNyestePeriode
+import no.nav.arena_tiltak_aktivitet_acl.services.OppfolgingsperiodeService
+import no.nav.arena_tiltak_aktivitet_acl.services.UkjentPersonIngenPerioder
 import no.nav.security.token.support.core.api.Protected
 import no.nav.security.token.support.core.api.ProtectedWithClaims
 import org.springframework.web.bind.annotation.PostMapping
@@ -26,7 +31,9 @@ import java.util.*
 @RequestMapping("/api/translation")
 class TranslationController(
 	private val authService: AuthService,
-	private val aktivitetskortIdService: AktivitetskortIdService
+	private val aktivitetskortIdService: AktivitetskortIdService,
+	private val aktivitetService: AktivitetService,
+	private val oppfolgingsperiodeService: OppfolgingsperiodeService,
 ) {
 
 	@ProtectedWithClaims(issuer = Issuer.AZURE_AD)
@@ -41,7 +48,25 @@ class TranslationController(
 		@RequestBody query: TranslationQuery
 	): UUID {
 		authService.validerErM2MToken()
-		return aktivitetskortIdService.getOrCreate(DeltakelseId(query.arenaId), query.aktivitetKategori)
+		val arenaId = ArenaId(DeltakelseId(query.arenaId), query.aktivitetKategori)
+
+		val oppfolgingsperioder = finnPersonIdent(arenaId)
+			?.let { personIdent -> oppfolgingsperiodeService.hentAlleOppfolgingsperioder(personIdent) }
+			?.let { BrukNyestePeriode(it) } ?: UkjentPersonIngenPerioder(arenaId.deltakelseId)
+
+		return aktivitetskortIdService.getOrCreate(arenaId, oppfolgingsperioder)
+			.let { when (it) {
+				is AktivitetskortIdService.Funnet -> it.aktivitetskortId
+				is AktivitetskortIdService.Opprettet -> it.aktivitetskortId
+				is AktivitetskortIdService.Forelopig -> it.forelopigAktivitetskortId.id
+			} }
+	}
+
+	fun finnPersonIdent(arenaId: ArenaId): String? {
+		return aktivitetService.getAllBy(arenaId)
+			.values
+			.firstOrNull()
+			?.let { aktivitet -> return aktivitet.person_ident }
 	}
 }
 

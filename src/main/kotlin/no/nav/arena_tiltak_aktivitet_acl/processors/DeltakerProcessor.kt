@@ -92,7 +92,7 @@ open class DeltakerProcessor(
 		when (endring) {
 			is EndringsType.NyttAktivitetskortByttPeriode  -> {
 				secureLog.info("Endring på deltakelse ${deltakelse.tiltakdeltakelseId} på deltakerId ${deltakelse.tiltakdeltakelseId} til ny aktivitetsid ${endring.aktivitetskortId} og oppfølgingsperiode ${periodeMatch.oppfolgingsperiode.uuid}. " +
-					"Oppretter nytt aktivitetskort for personIdent $personIdent og endrer eksisterende translation entry")
+					"Oppretter nytt aktivitetskort id:${endring.aktivitetskortId} for personIdent $personIdent og endrer eksisterende translation entry")
 				syncOppfolgingsperioder(deltakelse.tiltakdeltakelseId, periodeMatch.allePerioder)
 			}
 			is EndringsType.NyttAktivitetskort -> {}
@@ -118,7 +118,7 @@ open class DeltakerProcessor(
 			arenaId = "${KafkaProducerService.TILTAK_ID_PREFIX}${deltakelse.tiltakdeltakelseId}",
 			tiltakKode = tiltak.kode,
 			oppfolgingsperiode = periodeMatch.oppfolgingsperiode.uuid,
-			oppfolgingsSluttDato = periodeMatch.oppfolgingsperiode.sluttDato
+			oppfolgingsSluttDato = periodeMatch.oppfolgingsperiode.sluttTidspunkt
 		)
 
 		aktivitetService.upsert(aktivitet, aktivitetskortHeaders, deltakelse.tiltakdeltakelseId, IgnorertStatus.IKKE_IGNORERT != endring.skalIgnoreres )
@@ -184,7 +184,8 @@ open class DeltakerProcessor(
 				/* Hvis perioden er åpne OG det finnes et aktivitetskort i den så ønsker vi likevel å oppdatere kortet selvom
 				nåværende tilDato og modDato ikke matcher en oppfølgingperiode */
 				val etterslengerAktivitetskort = aktivitetService
-					.getAllBy(deltaker.tiltakdeltakelseId, AktivitetKategori.TILTAKSAKTIVITET)
+					.getAllBy(ArenaId(deltaker.tiltakdeltakelseId, AktivitetKategori.TILTAKSAKTIVITET))
+					.values
 					.firstOrNull { it.oppfolgingsperiodeSlutt == null } // Bare hvis perioden er åpen
 				etterslengerAktivitetskort?.oppfolgingsPeriode
 					?.let { funnetPeriode.allePerioder.find { it.uuid == etterslengerAktivitetskort.oppfolgingsPeriode } }
@@ -211,23 +212,36 @@ open class DeltakerProcessor(
 		operationType: Operation
 	): EndringsType {
 		val skalIgnoreres = skalIgnoreres(deltakerStatusKode, administrasjonskode, deltakelseId, operationTimestamp, operationType)
-		val oppfolgingsperiodeTilAktivitetskortId = aktivitetService.getAllBy(deltakelseId, AktivitetKategori.TILTAKSAKTIVITET)
-		val eksisterendeAktivitetsId = oppfolgingsperiodeTilAktivitetskortId
-			.firstOrNull { it.oppfolgingsPeriode == periodeMatch.oppfolgingsperiode.uuid }?.id
+		val alleAktivitetsKortByPeriode = aktivitetService.getAllBy(ArenaId(deltakelseId, AktivitetKategori.TILTAKSAKTIVITET))
+			.also { log.info("Fant ${it.size} eksisterende aktivitetskort på deltakelseId:${deltakelseId.value} og periode:${periodeMatch.oppfolgingsperiode.uuid}") }
+		val aktivitetskortForPeriode = alleAktivitetsKortByPeriode[periodeMatch.oppfolgingsperiode.uuid]
 		return when {
-			// Har tidligere deltakelse på samme oppfolgingsperiode
-			eksisterendeAktivitetsId != null -> EndringsType.OppdaterAktivitet(eksisterendeAktivitetsId, skalIgnoreres)
 			// Har ingen tidligere aktivitetskort
-			oppfolgingsperiodeTilAktivitetskortId.isEmpty() -> EndringsType.NyttAktivitetskort(getAkivitetskortId(deltakelseId), periodeMatch.oppfolgingsperiode, skalIgnoreres)
+			alleAktivitetsKortByPeriode.isEmpty() -> EndringsType.NyttAktivitetskort(
+				getAkivitetskortId(deltakelseId, periodeMatch),
+				periodeMatch.oppfolgingsperiode,
+				skalIgnoreres)
+			// Har tidligere deltakelse på samme oppfolgingsperiode
+			aktivitetskortForPeriode != null -> EndringsType.OppdaterAktivitet(
+				aktivitetskortForPeriode.id,
+				skalIgnoreres)
 			// Har tidligere deltakelse men ikke på samme oppfølgingsperiode
-			else -> {
-				EndringsType.NyttAktivitetskortByttPeriode(periodeMatch.oppfolgingsperiode, skalIgnoreres)
-			}
+			else -> EndringsType.NyttAktivitetskortByttPeriode(
+				periodeMatch.oppfolgingsperiode,
+				skalIgnoreres,
+				getAkivitetskortId(deltakelseId, periodeMatch))
 		}
 	}
 
-	fun getAkivitetskortId(deltakelseId: DeltakelseId): UUID {
-		return aktivitetskortIdService.getOrCreate(deltakelseId, AktivitetKategori.TILTAKSAKTIVITET)
+	fun getAkivitetskortId(deltakelseId: DeltakelseId, periodeMatch: FinnOppfolgingResult.FunnetPeriodeResult): UUID {
+		return aktivitetskortIdService.getOrCreate(ArenaId(deltakelseId, AktivitetKategori.TILTAKSAKTIVITET), FerdigMatchetPeriode( periodeMatch.oppfolgingsperiode,  periodeMatch.allePerioder))
+			.let {
+				when(it) {
+					is AktivitetskortIdService.Opprettet -> it.aktivitetskortId
+					is AktivitetskortIdService.Funnet -> it.aktivitetskortId
+					is AktivitetskortIdService.Forelopig -> it.forelopigAktivitetskortId.id
+				}
+			}
 	}
 
 	fun syncOppfolgingsperioder(deltakelseId: DeltakelseId, oppfolginsperioder: List<Oppfolgingsperiode>) {
@@ -273,7 +287,7 @@ enum class IgnorertStatus {
 sealed class EndringsType(val aktivitetskortId: UUID, val skalIgnoreres: IgnorertStatus) {
 	class OppdaterAktivitet(aktivitetskortId: UUID, skalIgnoreres: IgnorertStatus): EndringsType(aktivitetskortId, skalIgnoreres)
 	class NyttAktivitetskort(aktivitetskortId:UUID, val oppfolgingsperiode: Oppfolgingsperiode, skalIgnoreres: IgnorertStatus): EndringsType(aktivitetskortId, skalIgnoreres)
-	class NyttAktivitetskortByttPeriode(val oppfolgingsperiode: Oppfolgingsperiode, skalIgnoreres: IgnorertStatus): EndringsType(UUID.randomUUID(), skalIgnoreres)
+	class NyttAktivitetskortByttPeriode(val oppfolgingsperiode: Oppfolgingsperiode, skalIgnoreres: IgnorertStatus, aktivitetskortId: UUID): EndringsType(aktivitetskortId, skalIgnoreres)
 }
 
 

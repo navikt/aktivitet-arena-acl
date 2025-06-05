@@ -31,8 +31,8 @@ class OppfolgingClientImpl(
 
 			return ObjectMapper.get().readValue<List<OppfolgingsperiodeDto>>(body).map { dto -> Oppfolgingsperiode(
 				uuid = dto.uuid,
-				startDato = dto.startDato,
-				sluttDato = dto.sluttDato
+				startTidspunkt = dto.startDato,
+				sluttTidspunkt = dto.sluttDato
 			) }
 		}
 	}
