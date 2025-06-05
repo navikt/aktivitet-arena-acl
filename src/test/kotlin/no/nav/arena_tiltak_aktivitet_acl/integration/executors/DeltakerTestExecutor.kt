@@ -19,6 +19,7 @@ import no.nav.arena_tiltak_aktivitet_acl.integration.commands.deltaker.HandledRe
 import no.nav.arena_tiltak_aktivitet_acl.integration.kafka.KafkaAktivitetskortIntegrationConsumer
 import no.nav.arena_tiltak_aktivitet_acl.repositories.AktivitetRepository
 import no.nav.arena_tiltak_aktivitet_acl.repositories.ArenaDataRepository
+import no.nav.arena_tiltak_aktivitet_acl.services.ArenaId
 import no.nav.arena_tiltak_aktivitet_acl.utils.ArenaTableName
 import no.nav.common.kafka.producer.KafkaProducerClientImpl
 import java.time.LocalDateTime
@@ -68,7 +69,12 @@ class DeltakerTestExecutor(
 		)
 
 		val deltakelseId = DeltakelseId(arenaData.arenaId.toLong())
-		var deltakerAktivitetMapping = aktivitetRepository.getAllBy(deltakelseId, AktivitetKategori.TILTAKSAKTIVITET)
+		var deltakerAktivitetMapping = aktivitetRepository.getAllBy(
+			ArenaId(
+				deltakelseId,
+				AktivitetKategori.TILTAKSAKTIVITET
+			)
+		).values
 		// There is no ack for messages which are put in retry,
 		// use translation-table for checking if record is processed <- GJELDER IKKE LENGER
 		when (arenaData.ingestStatus) {
@@ -85,7 +91,7 @@ class DeltakerTestExecutor(
 			IngestStatus.HANDLED -> {
 				val message: TestRecord = runBlocking {
 					waitForAktivitetskortOnOutgoingTopic {
-						deltakerAktivitetMapping = aktivitetRepository.getAllBy(deltakelseId, AktivitetKategori.TILTAKSAKTIVITET)
+						deltakerAktivitetMapping = aktivitetRepository.getAllBy(ArenaId(deltakelseId, AktivitetKategori.TILTAKSAKTIVITET)).values
 						deltakerAktivitetMapping.any { a -> it.melding.aktivitetskort.id == a.id }
 					}
 				}
