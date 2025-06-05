@@ -27,10 +27,6 @@ open class AktivitetskortIdService(
 ) {
 	private val log = LoggerFactory.getLogger(AktivitetskortIdService::class.java)
 
-	open fun getByPeriode(deltakelseId: DeltakelseId, aktivitetKategori: AktivitetKategori, oppfolgingsperiode: Oppfolgingsperiode): DeltakerAktivitetMappingDbo? {
-		return deltakerAktivitetMappingRespository.getByPeriode(deltakelseId, aktivitetKategori, oppfolgingsperiode.uuid)
-	}
-
 	/**
 	 * SafeDeltakelse will make sure no other transaction is processing the same deltakelse for the duration of the ongoing transaction.
 	 * If another transaction is processing the same deltakelse (i.e. AktivitetService) this transaction will wait its turn until the other transaction is complete.
