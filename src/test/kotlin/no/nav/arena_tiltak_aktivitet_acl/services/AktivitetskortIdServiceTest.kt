@@ -273,7 +273,7 @@ class AktivitetskortIdServiceTest {
 	}
 
 	@Test
-	fun `Skal gi ut eksisterende id hvis den finnes i translation tabell`() {
+	fun `Skal gi ut eksisterende id hvis den finnes i translation tabell - periode finnes`() {
 		val arenaId = ArenaId(DeltakelseId(12345), AktivitetKategori.TILTAKSAKTIVITET)
 		val oppfolgingsperiode = Oppfolgingsperiode(UUID.randomUUID(), ZonedDateTime.now(), null)
 		val translationId = FantIdITranslationTabell(UUID.randomUUID())
@@ -283,6 +283,7 @@ class AktivitetskortIdServiceTest {
 
 		withClue("TranslationId skal være Created") {
 			(aktivitetskortId is AktivitetskortIdService.Created) shouldBe true
+			(aktivitetskortId as AktivitetskortIdService.Created).aktivitetskortId shouldBe translationId.id
 		}
 		verify { deltakerAktivitetMappingRepository.insert(DeltakerAktivitetMappingDbo(
 			deltakelseId = arenaId.deltakelseId.value,
@@ -292,5 +293,20 @@ class AktivitetskortIdServiceTest {
 			oppfolgingsPeriodeSluttTidspunkt = oppfolgingsperiode.sluttTidspunkt
 		)) }
 		verify { forelopigIdRepository.deleteDeltakelseId(arenaId) }
+	}
+
+	@Test
+	fun `Skal gi ut eksisterende id hvis den finnes i translation tabell - periode finnes ikke`() {
+		val arenaId = ArenaId(DeltakelseId(12345), AktivitetKategori.TILTAKSAKTIVITET)
+		val translationId = FantIdITranslationTabell(UUID.randomUUID())
+		gittIdFinnesBareITranslationTabell(arenaId, translationId)
+
+		val aktivitetskortId = aktivitetskortIdService.getOrCreate(arenaId, UkjentPersonIngenPerioder(arenaId.deltakelseId))
+
+		withClue("TranslationId skal være Created") {
+			(aktivitetskortId is AktivitetskortIdService.Forelopig) shouldBe true
+			(aktivitetskortId as AktivitetskortIdService.Forelopig).forelopigAktivitetskortId.id shouldBe translationId.id
+		}
+		verify { forelopigIdRepository.getOrCreate(arenaId.deltakelseId, arenaId.aktivitetKategori) }
 	}
 }
