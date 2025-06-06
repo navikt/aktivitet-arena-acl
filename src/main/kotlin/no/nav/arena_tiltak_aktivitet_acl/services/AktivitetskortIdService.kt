@@ -175,7 +175,7 @@ open class AktivitetskortIdService(
 data class ArenaId(
 	val deltakelseId: DeltakelseId,
 	val aktivitetKategori: AktivitetKategori) {
-	override fun toString() = "$aktivitetKategori$deltakelseId"
+	override fun toString() = "${aktivitetKategori.prefix}$deltakelseId"
 }
 
 sealed class OppfolgingsPeriodeInput
