@@ -16,7 +16,10 @@ import no.nav.arena_tiltak_aktivitet_acl.repositories.NyForelopigId
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.ZonedDateTime
 import java.util.*
+import java.util.UUID
+import kotlin.Long
 
 @Service
 open class AktivitetskortIdService(
@@ -82,8 +85,16 @@ open class AktivitetskortIdService(
 		val currentOppfolgingsperiodeId = sisteAktivitetskortId?.oppfolgingsPeriodeId
 
 		if (sisteAktivitet != null && sisteAktivitetskortId == null) {
+			deltakerAktivitetMappingRespository.insert(DeltakerAktivitetMappingDbo(
+				deltakelseId = sisteAktivitet.arenaId.substring(7).toLong(), // ARENATA6568951
+				aktivitetId = sisteAktivitet.id,
+				aktivitetKategori = arenaId.aktivitetKategori.name,
+				oppfolgingsPeriodeId = sisteAktivitet.oppfolgingsperiodeUUID,
+			 	oppfolgingsPeriodeSluttTidspunkt = sisteAktivitet.oppfolgingsSluttTidspunkt
+			)
+			)
 			log.error("Fant opprettet aktivitetskort uten aktivitetId i mapping tabell, delatker-aktivitet mapping er ikke blitt oppdatert for deltakelseId: ${arenaId.deltakelseId.value}")
-			throw IllegalStateException("App må fikses!")
+			//throw IllegalStateException("App må fikses!")
 		}
 
 		if (periodeInput is UkjentPersonIngenPerioder) {
