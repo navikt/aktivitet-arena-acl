@@ -81,7 +81,7 @@ open class AktivitetskortIdService(
 		val sisteAktivitet = aktivitetRepository.getCurrentAktivitetsId(arenaId.deltakelseId, arenaId.aktivitetKategori)
 			?.let { aktivitetRepository.getAktivitet(it) }
 
-		val sisteAktivitetskortId = deltakerAktivitetMappingRespository.getCurrentDeltakerAktivitetMapping(arenaId.deltakelseId, arenaId.aktivitetKategori)
+		var sisteAktivitetskortId = deltakerAktivitetMappingRespository.getCurrentDeltakerAktivitetMapping(arenaId.deltakelseId, arenaId.aktivitetKategori)
 		val currentOppfolgingsperiodeId = sisteAktivitetskortId?.oppfolgingsPeriodeId
 
 		if (sisteAktivitet != null && sisteAktivitetskortId == null) {
@@ -93,6 +93,7 @@ open class AktivitetskortIdService(
 			 	oppfolgingsPeriodeSluttTidspunkt = sisteAktivitet.oppfolgingsSluttTidspunkt
 			)
 			)
+			sisteAktivitetskortId = deltakerAktivitetMappingRespository.getCurrentDeltakerAktivitetMapping(arenaId.deltakelseId, arenaId.aktivitetKategori)
 			log.warn("Fant opprettet aktivitetskort uten aktivitetId i mapping tabell, Inserter mapping for eksisterende aktivet: ${arenaId.deltakelseId.value}")
 		}
 
