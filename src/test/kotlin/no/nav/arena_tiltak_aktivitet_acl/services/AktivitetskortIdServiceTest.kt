@@ -325,7 +325,7 @@ class AktivitetskortIdServiceTest {
 	}
 
 	@Test
-	fun `Skal gi ut eksisterende id hvis den finnes i translation tabell - periode finnes også når aktivitet finnes i aktivitet tabell`() {
+	fun `Skal gi ut eksisterende id hvis den finnes i translation tabell - også når aktivitet finnes i aktivitet tabell - periode finnes`() {
 		val arenaId = ArenaId(DeltakelseId(12345), AktivitetKategori.TILTAKSAKTIVITET)
 		val oppfolgingsperiode = Oppfolgingsperiode(UUID.randomUUID(), ZonedDateTime.now(), null)
 		val aktivitetskortId = UUID.randomUUID()
