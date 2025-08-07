@@ -93,8 +93,7 @@ open class AktivitetskortIdService(
 			 	oppfolgingsPeriodeSluttTidspunkt = sisteAktivitet.oppfolgingsSluttTidspunkt
 			)
 			)
-			log.error("Fant opprettet aktivitetskort uten aktivitetId i mapping tabell, delatker-aktivitet mapping er ikke blitt oppdatert for deltakelseId: ${arenaId.deltakelseId.value}")
-			//throw IllegalStateException("App må fikses!")
+			log.warn("Fant opprettet aktivitetskort uten aktivitetId i mapping tabell, Inserter mapping for eksisterende aktivet: ${arenaId.deltakelseId.value}")
 		}
 
 		if (periodeInput is UkjentPersonIngenPerioder) {
