@@ -69,10 +69,11 @@ class AktivitetskortIdServiceTest {
 		}
 	}
 
-	fun gittDeltakelseHarAktivitetMenIngenDeltakerMapping(arenaId: ArenaId, aktivitetsKortId: ForelopigAktivitetskortId) {
-		mockAktivitetRepository(arenaId, aktivitetsKortId.id)
+	fun gittDeltakelseHarAktivitetMenIngenDeltakerMapping(arenaId: ArenaId, aktivitetsKort: AktivitetDbo) {
+		mockAktivitetRepository(arenaId, aktivitetsKort.id)
 		every { deltakerAktivitetMappingRepository.getCurrentDeltakerAktivitetMapping(arenaId.deltakelseId, arenaId.aktivitetKategori) } returns null
-		every { forelopigIdRepository.getOrCreate(arenaId.deltakelseId, arenaId.aktivitetKategori) } returns aktivitetsKortId
+		every { forelopigIdRepository.getOrCreate(arenaId.deltakelseId, arenaId.aktivitetKategori) } returns FantIdITranslationTabell(aktivitetsKort.id)
+		every { aktivitetRepository.getAktivitet(aktivitetsKort.id) } returns aktivitetsKort
 	}
 
 	fun gittDeltakelseHarAktivitetskortId(arenaId: ArenaId, aktivitetsKortId: UUID, oppfolgingsperiodeId: UUID, oppfolgingsperiodeSluttTidspunkt: ZonedDateTime? = null) {
@@ -322,8 +323,19 @@ class AktivitetskortIdServiceTest {
 		val oppfolgingsperiode = Oppfolgingsperiode(UUID.randomUUID(), ZonedDateTime.now(), null)
 		val aktivitetskortId = UUID.randomUUID()
 		val translationId = FantIdITranslationTabell(aktivitetskortId)
+		val personIdent = "10037698709"
 		gittIdFinnesBareITranslationTabell(arenaId, translationId)
-		gittDeltakelseHarAktivitetMenIngenDeltakerMapping(arenaId, EksisterendeForelopigId(aktivitetskortId))
+
+		val aktivitetsKort = AktivitetDbo(
+			id = aktivitetskortId,
+			arenaId = "ARENATA${arenaId.deltakelseId.value}",
+			kategori = arenaId.aktivitetKategori,
+			personIdent = personIdent,
+			oppfolgingsperiodeUUID = oppfolgingsperiode.uuid,
+			oppfolgingsSluttTidspunkt = oppfolgingsperiode.sluttTidspunkt,
+			tiltakKode = "VASV",
+			data = "{}")
+		gittDeltakelseHarAktivitetMenIngenDeltakerMapping(arenaId, aktivitetsKort)
 
 		val aktivitetskortIdResult = aktivitetskortIdService.getOrCreate(arenaId, BrukNyestePeriode(listOf(oppfolgingsperiode)))
 
