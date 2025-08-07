@@ -71,7 +71,14 @@ class AktivitetskortIdServiceTest {
 
 	fun gittDeltakelseHarAktivitetMenIngenDeltakerMapping(arenaId: ArenaId, aktivitetsKort: AktivitetDbo) {
 		mockAktivitetRepository(arenaId, aktivitetsKort.id)
-		every { deltakerAktivitetMappingRepository.getCurrentDeltakerAktivitetMapping(arenaId.deltakelseId, arenaId.aktivitetKategori) } returns null
+		every { deltakerAktivitetMappingRepository.getCurrentDeltakerAktivitetMapping(arenaId.deltakelseId, arenaId.aktivitetKategori) }returns null andThen
+			DeltakerAktivitetMappingDbo(
+			deltakelseId = arenaId.deltakelseId.value,
+			aktivitetKategori = arenaId.aktivitetKategori.name,
+			aktivitetId = aktivitetsKort.id,
+			oppfolgingsPeriodeId = aktivitetsKort.oppfolgingsperiodeUUID,
+			oppfolgingsPeriodeSluttTidspunkt = aktivitetsKort.oppfolgingsSluttTidspunkt
+		)
 		every { forelopigIdRepository.getOrCreate(arenaId.deltakelseId, arenaId.aktivitetKategori) } returns FantIdITranslationTabell(aktivitetsKort.id)
 		every { aktivitetRepository.getAktivitet(aktivitetsKort.id) } returns aktivitetsKort
 	}
@@ -324,8 +331,6 @@ class AktivitetskortIdServiceTest {
 		val aktivitetskortId = UUID.randomUUID()
 		val translationId = FantIdITranslationTabell(aktivitetskortId)
 		val personIdent = "10037698709"
-		gittIdFinnesBareITranslationTabell(arenaId, translationId)
-
 		val aktivitetsKort = AktivitetDbo(
 			id = aktivitetskortId,
 			arenaId = "ARENATA${arenaId.deltakelseId.value}",
@@ -335,6 +340,9 @@ class AktivitetskortIdServiceTest {
 			oppfolgingsSluttTidspunkt = oppfolgingsperiode.sluttTidspunkt,
 			tiltakKode = "VASV",
 			data = "{}")
+
+		gittIdFinnesBareITranslationTabell(arenaId, translationId)
+
 		gittDeltakelseHarAktivitetMenIngenDeltakerMapping(arenaId, aktivitetsKort)
 
 		val aktivitetskortIdResult = aktivitetskortIdService.getOrCreate(arenaId, BrukNyestePeriode(listOf(oppfolgingsperiode)))
@@ -350,6 +358,5 @@ class AktivitetskortIdServiceTest {
 			oppfolgingsPeriodeId = oppfolgingsperiode.uuid,
 			oppfolgingsPeriodeSluttTidspunkt = oppfolgingsperiode.sluttTidspunkt
 		)) }
-		verify { forelopigIdRepository.deleteDeltakelseId(arenaId) }
 	}
 }
