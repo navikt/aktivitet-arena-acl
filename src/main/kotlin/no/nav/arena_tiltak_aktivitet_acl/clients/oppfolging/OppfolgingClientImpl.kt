@@ -19,7 +19,7 @@ class OppfolgingClientImpl(
 	override fun hentOppfolgingsperioder(fnr: String): List<Oppfolgingsperiode> {
 
 		val request = Request.Builder()
-			.url("$baseUrl/veilarboppfolging/api/v3//oppfolging/hent-perioder")
+			.url("$baseUrl/veilarboppfolging/api/v3/oppfolging/hent-perioder")
 			.addHeader("Authorization", "Bearer ${tokenProvider.get()}")
 			.post(JsonUtils.toJson(OppfolgingsperiodeQueryDto(fnr))
 				.toRequestBody("application/json".toMediaType())
