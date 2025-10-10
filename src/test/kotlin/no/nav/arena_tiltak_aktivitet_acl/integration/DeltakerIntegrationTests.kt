@@ -182,6 +182,58 @@ class DeltakerIntegrationTests : IntegrationTestBase() {
 			it.headers.oppfolgingsSluttDato!!.shouldBeWithin(Duration.ofMillis(1), gammelPeriode.sluttTidspunkt!!)
 		}
 	}
+	@Test
+	fun `skal oppdatere aktivitetskort i aktiv periode`() {
+		val (gjennomforingId, deltakerId, gjennomforingInput, tiltak) = setup()
+
+		val gammelPeriode = OppfolgingClientMock.defaultOppfolgingsperioder.first()
+		val aktivPeriode = OppfolgingClientMock.defaultOppfolgingsperioder.last()
+		val opprettetTidspunkt = aktivPeriode.startTidspunkt.plusSeconds(1)
+
+		val deltakerInput = DeltakerInput(
+			tiltakDeltakelseId = deltakerId,
+			tiltakgjennomforingId = gjennomforingId,
+			innsokBegrunnelse = "innsøkbegrunnelse",
+			endretAv = Ident(ident = "SIG123"),
+			endretTidspunkt = opprettetTidspunkt.toLocalDateTime(),
+			datoFra = gammelPeriode.startTidspunkt.plusDays(1).toLocalDate(),
+			datoTil = aktivPeriode.startTidspunkt.plusMonths(6).toLocalDate(),
+			deltakerStatusKode = "GJENN"
+		)
+		val deltakerCommand = NyDeltakerCommand(deltakerInput)
+		val result = deltakerExecutor.execute(deltakerCommand)
+
+		result.expectHandled {
+			it.output { it.actionType shouldBe ActionType.UPSERT_AKTIVITETSKORT_V1 }
+			it.deltakerAktivitetMapping.any { mapping -> mapping.id == it.output.aktivitetskort.id} shouldBe true
+			it.aktivitetskort { it.isSame(deltakerInput, tiltak, gjennomforingInput) }
+			it.headers.tiltakKode shouldBe gjennomforingInput.tiltakKode
+			it.headers.arenaId shouldBe TILTAK_ID_PREFIX + deltakerInput.tiltakDeltakelseId
+			it.headers.oppfolgingsperiode shouldBe aktivPeriode.uuid
+		}
+
+		val oppdatertDeltakerInput = DeltakerInput(
+			tiltakDeltakelseId = deltakerId,
+			tiltakgjennomforingId = gjennomforingId,
+			innsokBegrunnelse = "innsøkbegrunnelse",
+			endretAv = Ident(ident = "SIG123"),
+			endretTidspunkt = opprettetTidspunkt.toLocalDateTime(),
+			datoFra = gammelPeriode.startTidspunkt.plusDays(1).toLocalDate(),
+			datoTil = gammelPeriode.startTidspunkt.plusDays(1).toLocalDate(),
+			deltakerStatusKode = "GJENN_AVL"
+		)
+		val oppdatertDeltakerCommand = NyDeltakerCommand(oppdatertDeltakerInput)
+		val oppdatertResult = deltakerExecutor.execute(oppdatertDeltakerCommand)
+
+		oppdatertResult.expectHandled {
+			it.output { it.actionType shouldBe ActionType.UPSERT_AKTIVITETSKORT_V1 }
+			it.deltakerAktivitetMapping.any { mapping -> mapping.id == it.output.aktivitetskort.id} shouldBe true
+			it.aktivitetskort { it.isSame(oppdatertDeltakerInput, tiltak, gjennomforingInput, AktivitetStatus.AVBRUTT) }
+			it.headers.tiltakKode shouldBe gjennomforingInput.tiltakKode
+			it.headers.arenaId shouldBe TILTAK_ID_PREFIX + oppdatertDeltakerInput.tiltakDeltakelseId
+			it.headers.oppfolgingsperiode shouldBe aktivPeriode.uuid
+		}
+	}
 
 
 	@Test
@@ -1220,11 +1272,12 @@ class DeltakerIntegrationTests : IntegrationTestBase() {
 	private fun Aktivitetskort.isSame(
 		deltakerInput: DeltakerInput,
 		tiltak: TiltakDbo,
-		gjennomforingInput: GjennomforingInput
+		gjennomforingInput: GjennomforingInput,
+		aktivitetsStatus: AktivitetStatus = AktivitetStatus.GJENNOMFORES
 	) {
 		personIdent shouldBe "12345"
 		tittel shouldBe (gjennomforingInput.navn ?: "Ukjent navn")
-		aktivitetStatus shouldBe AktivitetStatus.GJENNOMFORES
+		aktivitetStatus shouldBe aktivitetsStatus
 		etiketter.size shouldBe 0
 		startDato shouldBe deltakerInput.datoFra
 		sluttDato shouldBe deltakerInput.datoTil
