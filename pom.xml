@@ -13,7 +13,7 @@
     <parent>
         <artifactId>spring-boot-starter-parent</artifactId>
         <groupId>org.springframework.boot</groupId>
-        <version>3.4.4</version>
+        <version>3.5.6</version>
     </parent>
 
     <properties>
@@ -24,12 +24,12 @@
         <kotlin.compiler.apiVersion>2.0</kotlin.compiler.apiVersion>
         <java.version>21</java.version>
 
-        <common.version>3.2024.11.26_16.35-432a29107830</common.version>
+        <common.version>3.2025.09.03_08.33-728ff4acbfdb</common.version>
         <kotest.version>5.7.2</kotest.version>
         <mockk.version>1.13.14</mockk.version>
         <testcontainers.version>1.20.4</testcontainers.version>
-        <token-support.version>5.0.19</token-support.version> <!-- NB keep in sync with spring-boot (for token-validation-spring) -->
-        <nimbus.version>11.20.1</nimbus.version> <!-- NB keep in sync with token support-->
+        <token-support.version>5.0.37</token-support.version> <!-- NB keep in sync with spring-boot (for token-validation-spring) -->
+        <nimbus.version>11.29.2</nimbus.version> <!-- NB keep in sync with token support-->
         <mockito-kotlin.version>3.2.0</mockito-kotlin.version>
         <wiremock.version>3.10.0</wiremock.version>
         <schedlock.version>4.33.0</schedlock.version>
