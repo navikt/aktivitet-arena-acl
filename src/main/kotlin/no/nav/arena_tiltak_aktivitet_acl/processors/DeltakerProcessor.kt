@@ -130,8 +130,8 @@ open class DeltakerProcessor(
 		val aktivitetskortHeaders = AktivitetskortHeaders(
 			arenaId = "${KafkaProducerService.TILTAK_ID_PREFIX}${deltakelse.tiltakdeltakelseId}",
 			tiltakKode = tiltak.kode,
-			oppfolgingsperiode = periodeMatch.oppfolgingsperiode.uuid,
-			oppfolgingsSluttDato = periodeMatch.oppfolgingsperiode.sluttTidspunkt
+			oppfolgingsperiode = endring.oppfolgingsperiode.uuid,
+			oppfolgingsSluttDato = endring.oppfolgingsperiode.sluttTidspunkt
 		)
 
 		aktivitetService.upsert(
@@ -272,14 +272,16 @@ open class DeltakerProcessor(
 				.also { log.info("Fant ${it.size} eksisterende aktivitetskort på deltakelseId:${deltakelseId.value} og periode:${periodeMatch.oppfolgingsperiode.uuid}") }
 		val aktivitetskortForPeriode = alleAktivitetsKortByPeriode[periodeMatch.oppfolgingsperiode.uuid]
 		val aktivPeriode = periodeMatch.allePerioder.find { it.sluttTidspunkt == null }
-		val aktivitetskortForAktivPeriode = if(aktivPeriode != null) alleAktivitetsKortByPeriode[aktivPeriode.uuid] else null
+		val aktivitetskortForAktivPeriode =
+			if (aktivPeriode != null) alleAktivitetsKortByPeriode[aktivPeriode.uuid] else null
 
 		return when {
 			// Hvis aktivitetskortForPeriode == null,
 			// men alle aktivitetskort i alleAktivitetsKortByPeriode tilhører en aktiv oppfølgingsperiode.
 			// Så skal vi returnere den aktive aktivitetskort-id'en
-			alleAktivitetsKortByPeriode.isNotEmpty() && aktivitetskortForAktivPeriode != null -> EndringsType.OppdaterAktivitet(
+			alleAktivitetsKortByPeriode.isNotEmpty() && aktivitetskortForAktivPeriode != null && aktivPeriode != null -> EndringsType.OppdaterAktivitet(
 				aktivitetskortForAktivPeriode.id,
+				aktivPeriode,
 				skalIgnoreres
 			)
 
@@ -292,6 +294,7 @@ open class DeltakerProcessor(
 			// Har tidligere deltakelse på samme oppfolgingsperiode
 			aktivitetskortForPeriode != null -> EndringsType.OppdaterAktivitet(
 				aktivitetskortForPeriode.id,
+				periodeMatch.oppfolgingsperiode,
 				skalIgnoreres
 			)
 			// Har tidligere deltakelse men ikke på samme oppfølgingsperiode
@@ -361,21 +364,29 @@ enum class IgnorertStatus {
 	IKKE_IGNORERT
 }
 
-sealed class EndringsType(val aktivitetskortId: UUID, val skalIgnoreres: IgnorertStatus) {
-	class OppdaterAktivitet(aktivitetskortId: UUID, skalIgnoreres: IgnorertStatus) :
-		EndringsType(aktivitetskortId, skalIgnoreres)
+sealed class EndringsType(
+	val aktivitetskortId: UUID,
+	val oppfolgingsperiode: Oppfolgingsperiode,
+	val skalIgnoreres: IgnorertStatus
+) {
+	class OppdaterAktivitet(
+		aktivitetskortId: UUID,
+		oppfolgingsperiode: Oppfolgingsperiode,
+		skalIgnoreres: IgnorertStatus
+	) :
+		EndringsType(aktivitetskortId, oppfolgingsperiode, skalIgnoreres)
 
 	class NyttAktivitetskort(
 		aktivitetskortId: UUID,
-		val oppfolgingsperiode: Oppfolgingsperiode,
+		oppfolgingsperiode: Oppfolgingsperiode,
 		skalIgnoreres: IgnorertStatus
-	) : EndringsType(aktivitetskortId, skalIgnoreres)
+	) : EndringsType(aktivitetskortId, oppfolgingsperiode, skalIgnoreres)
 
 	class NyttAktivitetskortByttPeriode(
-		val oppfolgingsperiode: Oppfolgingsperiode,
+		oppfolgingsperiode: Oppfolgingsperiode,
 		skalIgnoreres: IgnorertStatus,
 		aktivitetskortId: UUID
-	) : EndringsType(aktivitetskortId, skalIgnoreres)
+	) : EndringsType(aktivitetskortId, oppfolgingsperiode, skalIgnoreres)
 }
 
 
