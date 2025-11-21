@@ -8,41 +8,71 @@ import no.nav.arena_tiltak_aktivitet_acl.domain.kafka.arena.tiltak.DeltakelseId
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import java.time.ZonedDateTime
 import java.util.UUID
+import java.util.UUID.randomUUID
 
 class DeltakerAktivitetMappingRepositoryTest : FunSpec({
 
 	val datasource = SingletonPostgresContainer.getDataSource()
-	lateinit var repository: DeltakerAktivitetMappingRespository
+	lateinit var deltakerAktivitetMappingRespository: DeltakerAktivitetMappingRespository
+	lateinit var aktivitetRepository: AktivitetRepository
 
 	beforeEach {
-		repository = DeltakerAktivitetMappingRespository(NamedParameterJdbcTemplate(datasource))
+		deltakerAktivitetMappingRespository =
+			DeltakerAktivitetMappingRespository(NamedParameterJdbcTemplate(datasource))
+		aktivitetRepository = AktivitetRepository(NamedParameterJdbcTemplate(datasource))
 	}
 
 	test("Skal hente id for nyeste oppfølgingsperiode etter splitt") {
+
+		val avsluttetAktivitet = createAktivitet(ZonedDateTime.now().minusDays(1))
+		aktivitetRepository.upsert(avsluttetAktivitet)
+		val åpenAktivitet = createAktivitet()
+		aktivitetRepository.upsert(åpenAktivitet)
+
 		val deltakerAktivitetMappingFørSplitt = deltakerAktivitetMapping(
-			oppfølgingsperiodeId = UUID.randomUUID(),
+			oppfølgingsperiodeId = avsluttetAktivitet.oppfolgingsperiodeUUID,
+			avsluttetAktivitet.id,
 			oppfølgingsperiodeSlutt = ZonedDateTime.now().minusDays(1)
 		)
-		repository.insert(deltakerAktivitetMappingFørSplitt)
-		val deltakerAktivitetSomSkalFøreTilSplitt = deltakerAktivitetMapping(
-			oppfølgingsperiodeId = UUID.randomUUID(),
+		deltakerAktivitetMappingRespository.insert(deltakerAktivitetMappingFørSplitt)
+		val deltakerAktivitetSomSkalFørteTilSplitt = deltakerAktivitetMapping(
+			oppfølgingsperiodeId = åpenAktivitet.oppfolgingsperiodeUUID,
+			åpenAktivitet.id,
 			oppfølgingsperiodeSlutt = null
 		)
-		repository.insert(deltakerAktivitetSomSkalFøreTilSplitt)
+		deltakerAktivitetMappingRespository.insert(deltakerAktivitetSomSkalFørteTilSplitt)
 
-		val deltakerMappingEtterSplitt = repository.getCurrentDeltakerAktivitetMapping(
+
+		val deltakerMappingEtterSplitt = deltakerAktivitetMappingRespository.getCurrentDeltakerAktivitetMapping(
 			DeltakelseId(deltakerAktivitetMappingFørSplitt.deltakelseId),
 			AktivitetKategori.TILTAKSAKTIVITET
 		)!!
 
-		deltakerMappingEtterSplitt.oppfolgingsPeriodeId shouldBe deltakerAktivitetSomSkalFøreTilSplitt.oppfolgingsPeriodeId
+		deltakerMappingEtterSplitt.oppfolgingsPeriodeId shouldBe deltakerAktivitetSomSkalFørteTilSplitt.oppfolgingsPeriodeId
 	}
 })
 
-private fun deltakerAktivitetMapping(oppfølgingsperiodeId: UUID, oppfølgingsperiodeSlutt: ZonedDateTime? = null) =
+private fun createAktivitet(oppfølgingsperiodeSlutt: ZonedDateTime? = null): AktivitetDbo {
+	return AktivitetDbo(
+		id = randomUUID(),
+		personIdent = "123123123",
+		kategori = AktivitetKategori.TILTAKSAKTIVITET,
+		data = "{}",
+		arenaId = "ARENATA-222",
+		tiltakKode = "MIDLONNTIL",
+		oppfolgingsperiodeUUID = randomUUID(),
+		oppfolgingsSluttTidspunkt = oppfølgingsperiodeSlutt,
+	)
+}
+
+private fun deltakerAktivitetMapping(
+	oppfølgingsperiodeId: UUID,
+	aktivitetId: UUID,
+	oppfølgingsperiodeSlutt: ZonedDateTime? = null
+) =
 	DeltakerAktivitetMappingDbo(
 		deltakelseId = 123,
-		aktivitetId = UUID.randomUUID(),
+		aktivitetId = aktivitetId,
 		aktivitetKategori = "TILTAKSAKTIVITET",
 		oppfolgingsPeriodeId = oppfølgingsperiodeId,
 		oppfolgingsPeriodeSluttTidspunkt = oppfølgingsperiodeSlutt,

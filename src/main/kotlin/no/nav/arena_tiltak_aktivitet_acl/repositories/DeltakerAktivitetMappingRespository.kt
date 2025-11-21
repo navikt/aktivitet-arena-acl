@@ -30,10 +30,11 @@ open class DeltakerAktivitetMappingRespository(
 				aktivitetskort_id,
 				aktivitet_kategori,
 				oppfolgingsperiode_id,
-				oppfolgingsperiode_slutttidspunkt,
-				COALESCE(oppfolgingsperiode_slutttidspunkt, TO_TIMESTAMP('9999', 'YYYY')) slutt
+				aktivitet.oppfolgingsperiode_slutt_tidspunkt,
+				COALESCE(aktivitet.oppfolgingsperiode_slutt_tidspunkt, TO_TIMESTAMP('9999', 'YYYY')) slutt
 			FROM deltaker_aktivitet_mapping
-			WHERE deltaker_id = :deltaker_id and aktivitet_kategori = :aktivitet_kategori
+			inner join aktivitet on deltaker_aktivitet_mapping.oppfolgingsperiode_id = aktivitet.oppfolgingsperiode_uuid
+			WHERE deltaker_id = :deltaker_id and aktivitet_kategori = :aktivitet_kategori and aktivitet.id = deltaker_aktivitet_mapping.aktivitetskort_id
 			ORDER BY deltaker_id, slutt desc
 		""".trimIndent()
 		val parameters = mapOf("deltaker_id" to deltakelseId.value, "aktivitet_kategori" to aktivitetKategori.name)
@@ -99,6 +100,6 @@ fun ResultSet.toDbo(): DeltakerAktivitetMappingDbo {
 		aktivitetId = this.getUUID("aktivitetskort_id"),
 		aktivitetKategori = this.getString("aktivitet_kategori"),
 		oppfolgingsPeriodeId = this.getUUID("oppfolgingsperiode_id"),
-		oppfolgingsPeriodeSluttTidspunkt = this.getNullableZonedDateTime("oppfolgingsperiode_slutttidspunkt"),
+		oppfolgingsPeriodeSluttTidspunkt = this.getNullableZonedDateTime("oppfolgingsperiode_slutt_tidspunkt"),
 	)
 }
