@@ -42,55 +42,18 @@ open class DeltakerAktivitetMappingRespository(
 			.firstOrNull()
 	}
 
-	open fun getByPeriode(deltakelseId: DeltakelseId, aktivitetKategori: AktivitetKategori, oppfolgingsPeriodeId: UUID): DeltakerAktivitetMappingDbo? {
-		val sql = """
-			SELECT
-				deltaker_id,
-				aktivitetskort_id,
-				aktivitet_kategori,
-				oppfolgingsperiode_id,
-				oppfolgingsperiode_slutttidspunkt
-			FROM deltaker_aktivitet_mapping
-			WHERE deltaker_id = :deltaker_id
-				and aktivitet_kategori = :aktivitet_kategori
-				and oppfolgingsperiode_id = :oppfolgingsperiode_id
-		""".trimIndent()
-		val parameters = mapOf(
-			"deltaker_id" to deltakelseId.value,
-			"aktivitet_kategori" to aktivitetKategori.name,
-			"oppfolgingsperiode_id" to oppfolgingsPeriodeId
-		)
-		return template.query(sql, parameters) { row, _ -> row.toDbo() }
-			.let { if (it.size > 1) throw IllegalStateException("Expected only one result, but found ${it.size}") else it }
-			.firstOrNull()
-	}
-
 	open fun insert(dbo: DeltakerAktivitetMappingDbo): Int {
 		val sql = """
-			INSERT INTO deltaker_aktivitet_mapping(deltaker_id, aktivitetskort_id, aktivitet_kategori, oppfolgingsperiode_id, oppfolgingsperiode_slutttidspunkt)
-		 	VALUES (:deltaker_id, :aktivitet_id, :aktivitet_kategori, :oppfolgingsperiode_id, :oppfolgingsperiode_slutttidspunkt)
+			INSERT INTO deltaker_aktivitet_mapping(deltaker_id, aktivitetskort_id, aktivitet_kategori, oppfolgingsperiode_id)
+		 	VALUES (:deltaker_id, :aktivitet_id, :aktivitet_kategori, :oppfolgingsperiode_id)
 		""".trimIndent()
 		val parameters = mapOf(
 			"deltaker_id" to dbo.deltakelseId,
 			"aktivitet_id" to dbo.aktivitetId,
 			"aktivitet_kategori" to dbo.aktivitetKategori,
 			"oppfolgingsperiode_id" to dbo.oppfolgingsPeriodeId,
-			"oppfolgingsperiode_slutttidspunkt" to dbo.oppfolgingsPeriodeSluttTidspunkt?.toOffsetDateTime(),
 		)
 		return template.update(sql, parameters)
-	}
-
-	open fun markerOppfølgingsperiodeSomAvsluttet(oppfølgingsperiodeId: UUID, sluttTidspunkt: ZonedDateTime) {
-		val sql = """
-			UPDATE deltaker_aktivitet_mapping
-			SET oppfolgingsperiode_slutttidspunkt = :slutt_tidspunkt
-			WHERE oppfolgingsperiode_id = :oppfolgingsperiode_id
-		""".trimIndent()
-		val parameters = mapOf(
-			"slutt_tidspunkt" to sluttTidspunkt.toOffsetDateTime(),
-			"oppfolgingsperiode_id" to oppfølgingsperiodeId
-		)
-		template.update(sql, parameters)
 	}
 }
 
