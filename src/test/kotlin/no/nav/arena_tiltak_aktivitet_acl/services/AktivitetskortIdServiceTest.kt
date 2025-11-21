@@ -39,6 +39,7 @@ class AktivitetskortIdServiceTest {
 	}
 	val deltakerAktivitetMappingRepository = mockk<DeltakerAktivitetMappingRespository>().also {
 		every { it.insert(any()) } returns 1
+		every { it.markerOppfølgingsperiodeSomAvsluttet(any(), any()) } just runs
 	}
 
 	val aktivitetskortIdService = AktivitetskortIdService(
@@ -178,6 +179,7 @@ class AktivitetskortIdServiceTest {
 		gittDeltakelseHarAktivitetskortId(arenaId,  aktivitetskortId, gammelPeriode.uuid, null)
 
 		val nyAktivitetskortId = aktivitetskortIdService.getOrCreate(arenaId, BrukNyestePeriode(listOf(gammelPeriode, oppfolgingsperiode)))
+
 		withClue("Ny periode skal gi ny id") {
 			(nyAktivitetskortId as AktivitetskortIdService.Opprettet).aktivitetskortId shouldNotBe aktivitetskortId
 		}
@@ -189,6 +191,7 @@ class AktivitetskortIdServiceTest {
 			oppfolgingsPeriodeSluttTidspunkt = oppfolgingsperiode.sluttTidspunkt
 		)) }
 		verify { aktivitetRepository.closeClosedPerioder(arenaId.deltakelseId, arenaId.aktivitetKategori, any()) }
+		verify { deltakerAktivitetMappingRepository.markerOppfølgingsperiodeSomAvsluttet(gammelPeriode.uuid, gammelPeriode.sluttTidspunkt!!) }
 	}
 
 	@Test

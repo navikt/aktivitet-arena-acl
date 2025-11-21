@@ -78,6 +78,19 @@ open class DeltakerAktivitetMappingRespository(
 		)
 		return template.update(sql, parameters)
 	}
+
+	open fun markerOppfølgingsperiodeSomAvsluttet(oppfølgingsperiodeId: UUID, sluttTidspunkt: ZonedDateTime) {
+		val sql = """
+			UPDATE deltaker_aktivitet_mapping
+			SET oppfolgingsperiode_slutttidspunkt = :slutt_tidspunkt
+			WHERE oppfolgingsperiode_id = :oppfolgingsperiode_id
+		""".trimIndent()
+		val parameters = mapOf(
+			"oppfolgingsperiode_slutttidspunkt" to sluttTidspunkt.toOffsetDateTime(),
+			"oppfolgingsperiode_id" to oppfølgingsperiodeId
+		)
+		template.update(sql, parameters)
+	}
 }
 
 fun ResultSet.toDbo(): DeltakerAktivitetMappingDbo {

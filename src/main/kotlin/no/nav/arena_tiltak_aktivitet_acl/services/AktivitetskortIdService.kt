@@ -169,6 +169,7 @@ open class AktivitetskortIdService(
 
 	private fun settSluttdato(avsluttetPeriode: AvsluttetOppfolgingsperiode, arenaId: ArenaId) {
 		aktivitetRepository.closeClosedPerioder(arenaId.deltakelseId, arenaId.aktivitetKategori, listOf(avsluttetPeriode))
+		deltakerAktivitetMappingRespository.markerOppfølgingsperiodeSomAvsluttet(avsluttetPeriode.uuid, avsluttetPeriode.sluttDato)
 	}
 }
 
