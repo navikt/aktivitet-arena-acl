@@ -86,7 +86,7 @@ open class DeltakerAktivitetMappingRespository(
 			WHERE oppfolgingsperiode_id = :oppfolgingsperiode_id
 		""".trimIndent()
 		val parameters = mapOf(
-			"oppfolgingsperiode_slutttidspunkt" to sluttTidspunkt.toOffsetDateTime(),
+			"slutt_tidspunkt" to sluttTidspunkt.toOffsetDateTime(),
 			"oppfolgingsperiode_id" to oppfølgingsperiodeId
 		)
 		template.update(sql, parameters)
