@@ -1,0 +1,2 @@
+ALTER TABLE deltaker_aktivitet_mapping
+DROP COLUMN oppfolgingsperiode_slutttidspunkt;
