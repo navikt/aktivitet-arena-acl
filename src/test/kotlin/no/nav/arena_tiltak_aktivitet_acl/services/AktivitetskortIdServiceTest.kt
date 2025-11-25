@@ -29,7 +29,7 @@ import java.util.UUID
 class AktivitetskortIdServiceTest {
 
 	val aktivitetRepository = mockk<AktivitetRepository>().also {
-		every { it.closeClosedPerioder(any(), any(), any()) } just runs
+		every { it.closeClosedPerioder(any()) } just runs
 	}
 	val forelopigIdRepository = mockk<ForelopigAktivitetskortIdRepository>().also {
 		every { it.deleteDeltakelseId(any()) } returns 1
@@ -39,7 +39,6 @@ class AktivitetskortIdServiceTest {
 	}
 	val deltakerAktivitetMappingRepository = mockk<DeltakerAktivitetMappingRespository>().also {
 		every { it.insert(any()) } returns 1
-		every { it.markerOppfølgingsperiodeSomAvsluttet(any(), any()) } just runs
 	}
 
 	val aktivitetskortIdService = AktivitetskortIdService(
@@ -190,8 +189,7 @@ class AktivitetskortIdServiceTest {
 			oppfolgingsPeriodeId = oppfolgingsperiode.uuid,
 			oppfolgingsPeriodeSluttTidspunkt = oppfolgingsperiode.sluttTidspunkt
 		)) }
-		verify { aktivitetRepository.closeClosedPerioder(arenaId.deltakelseId, arenaId.aktivitetKategori, any()) }
-		verify { deltakerAktivitetMappingRepository.markerOppfølgingsperiodeSomAvsluttet(gammelPeriode.uuid, gammelPeriode.sluttTidspunkt!!) }
+		verify { aktivitetRepository.closeClosedPerioder(listOf(AvsluttetOppfolgingsperiode(gammelPeriode.uuid, gammelPeriode.startTidspunkt, gammelPeriode.sluttTidspunkt!!))) }
 	}
 
 	@Test
@@ -213,7 +211,7 @@ class AktivitetskortIdServiceTest {
 			oppfolgingsPeriodeId = oppfolgingsperiode.uuid,
 			oppfolgingsPeriodeSluttTidspunkt = oppfolgingsperiode.sluttTidspunkt
 		)) }
-		verify { aktivitetRepository.closeClosedPerioder(arenaId.deltakelseId, arenaId.aktivitetKategori, any()) }
+		verify { aktivitetRepository.closeClosedPerioder(any()) }
 	}
 
 	@Test
@@ -228,7 +226,7 @@ class AktivitetskortIdServiceTest {
 		withClue("Skal ikke gi ny id for gammel periode") {
 			(nyAktivitetsKortId as AktivitetskortIdService.Funnet).aktivitetskortId shouldBe aktivitetskortId
 		}
-		verify { aktivitetRepository.closeClosedPerioder(arenaId.deltakelseId, arenaId.aktivitetKategori, listOf(
+		verify { aktivitetRepository.closeClosedPerioder(listOf(
 			AvsluttetOppfolgingsperiode(gammelPeriode.uuid, gammelPeriode.startTidspunkt, gammelPeriode.sluttTidspunkt!!)))
 		}
 	}
@@ -244,7 +242,7 @@ class AktivitetskortIdServiceTest {
 		withClue("Skal ikke gi ny id for gammel periode") {
 			(nyAktivitetsKortId as AktivitetskortIdService.Funnet).aktivitetskortId shouldBe aktivitetskortId
 		}
-		verify { aktivitetRepository.closeClosedPerioder(arenaId.deltakelseId, arenaId.aktivitetKategori, listOf(
+		verify { aktivitetRepository.closeClosedPerioder(listOf(
 			AvsluttetOppfolgingsperiode(gammelPeriode.uuid, gammelPeriode.startTidspunkt, gammelPeriode.sluttTidspunkt!!)))
 		}
 	}
