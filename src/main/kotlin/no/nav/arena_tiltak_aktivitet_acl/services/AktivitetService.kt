@@ -20,7 +20,6 @@ open class AktivitetService(
 	val aktivitetRepository: AktivitetRepository,
 	val forelopigAktivitetskortIdRepository: ForelopigAktivitetskortIdRepository,
 	val deltakerLockRepository: AdvisoryLockRepository,
-	val deltakerAktivitetMappingRespository: DeltakerAktivitetMappingRespository
 ) {
 	/**
 	 * SafeDeltakelse will make sure no other transaction is processing the same deltakelse for the duration of the ongoing transaction.
@@ -37,12 +36,18 @@ open class AktivitetService(
 	open fun get(aktivitetId: UUID) = aktivitetRepository.getAktivitet(aktivitetId)
 	open fun getAllBy(arenaId: ArenaId) = aktivitetRepository.getAllBy(arenaId)
 
+	open fun upsertPerioder(oppfolginsperioder: List<Oppfolgingsperiode>) {
+		oppfolginsperioder.forEach {
+			aktivitetRepository.upsertPeriode(it)
+		}
+	}
+
 	open fun closeClosedPerioder(deltakelseId: DeltakelseId, aktivitetKategori: AktivitetKategori, oppfolgingsperioder: List<Oppfolgingsperiode>) {
 		val avsluttedePerioder = oppfolgingsperioder
 			.mapNotNull {
 				it.sluttTidspunkt
 					?.let { slutt -> AvsluttetOppfolgingsperiode(it.uuid, it.startTidspunkt, slutt) }
 			}
-		aktivitetRepository.closeClosedPerioder(deltakelseId, aktivitetKategori, avsluttedePerioder)
+		aktivitetRepository.closeClosedPerioder(avsluttedePerioder)
 	}
 }

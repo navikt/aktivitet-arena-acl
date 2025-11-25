@@ -51,7 +51,6 @@ data class Aktivitetskort(
 		arenaId = headers.arenaId,
 		tiltakKode = headers.tiltakKode,
 		oppfolgingsperiodeUUID = headers.oppfolgingsperiode,
-		oppfolgingsSluttTidspunkt = headers.oppfolgingsSluttDato,
 		forelopigIgnorert = forelopigIgnorert
 	)
 

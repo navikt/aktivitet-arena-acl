@@ -2,6 +2,7 @@ package no.nav.arena_tiltak_aktivitet_acl.repositories
 
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import no.nav.arena_tiltak_aktivitet_acl.clients.oppfolging.Oppfolgingsperiode
 import no.nav.arena_tiltak_aktivitet_acl.database.SingletonPostgresContainer
 import no.nav.arena_tiltak_aktivitet_acl.domain.kafka.aktivitet.AktivitetKategori
 import no.nav.arena_tiltak_aktivitet_acl.domain.kafka.arena.tiltak.DeltakelseId
@@ -25,8 +26,18 @@ class DeltakerAktivitetMappingRepositoryTest : FunSpec({
 	test("Skal hente id for nyeste oppfølgingsperiode etter splitt") {
 
 		val avsluttetAktivitet = createAktivitet(ZonedDateTime.now().minusDays(1))
+		aktivitetRepository.upsertPeriode(Oppfolgingsperiode(
+			avsluttetAktivitet.oppfolgingsperiodeUUID,
+			ZonedDateTime.now().minusDays(2),
+			ZonedDateTime.now().minusDays(1)
+		))
 		aktivitetRepository.upsert(avsluttetAktivitet)
 		val åpenAktivitet = createAktivitet()
+		aktivitetRepository.upsertPeriode(Oppfolgingsperiode(
+			åpenAktivitet.oppfolgingsperiodeUUID,
+			ZonedDateTime.now().minusDays(1),
+			null
+		))
 		aktivitetRepository.upsert(åpenAktivitet)
 
 		val deltakerAktivitetMappingFørSplitt = deltakerAktivitetMapping(
@@ -61,7 +72,6 @@ private fun createAktivitet(oppfølgingsperiodeSlutt: ZonedDateTime? = null): Ak
 		arenaId = "ARENATA-222",
 		tiltakKode = "MIDLONNTIL",
 		oppfolgingsperiodeUUID = randomUUID(),
-		oppfolgingsSluttTidspunkt = oppfølgingsperiodeSlutt,
 	)
 }
 

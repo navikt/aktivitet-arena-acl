@@ -14,6 +14,7 @@ import no.nav.arena_tiltak_aktivitet_acl.services.AktivitetService
 import no.nav.arena_tiltak_aktivitet_acl.services.AktivitetskortIdService
 import no.nav.arena_tiltak_aktivitet_acl.services.ArenaId
 import no.nav.arena_tiltak_aktivitet_acl.services.BrukNyestePeriode
+import no.nav.arena_tiltak_aktivitet_acl.services.FerdigMatchetPeriode
 import no.nav.arena_tiltak_aktivitet_acl.services.OppfolgingsperiodeService
 import no.nav.arena_tiltak_aktivitet_acl.services.UkjentPersonIngenPerioder
 import no.nav.security.token.support.core.api.Protected
@@ -53,6 +54,12 @@ class TranslationController(
 		val oppfolgingsperioder = finnPersonIdent(arenaId)
 			?.let { personIdent -> oppfolgingsperiodeService.hentAlleOppfolgingsperioder(personIdent) }
 			?.let { BrukNyestePeriode(it) } ?: UkjentPersonIngenPerioder(arenaId.deltakelseId)
+
+		when (oppfolgingsperioder) {
+			is FerdigMatchetPeriode -> aktivitetService.upsertPerioder(oppfolgingsperioder.oppfolgingsperioder)
+			is BrukNyestePeriode, -> aktivitetService.upsertPerioder(oppfolgingsperioder.oppfolgingsperioder)
+			is UkjentPersonIngenPerioder -> {}
+		}
 
 		return aktivitetskortIdService.getOrCreate(arenaId, oppfolgingsperioder)
 			.let { when (it) {
