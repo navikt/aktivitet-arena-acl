@@ -7,4 +7,4 @@ from deltaker_aktivitet_mapping
         and aktivitet.id = deltaker_aktivitet_mapping.aktivitetskort_id
 on conflict (id) do update
 -- Bare oppdater slutt hvis innkommende rad har en sluttdato
-set slutt = COALESCE(excluded.ny_slutt , slutt)
+set slutt = COALESCE(excluded.slutt , oppfolgingsperioder.slutt)
