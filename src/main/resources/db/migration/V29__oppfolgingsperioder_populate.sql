@@ -5,6 +5,7 @@ with oppfolgingsperioder_select as (
     from deltaker_aktivitet_mapping
         left join aktivitet on deltaker_aktivitet_mapping.oppfolgingsperiode_id = aktivitet.oppfolgingsperiode_uuid
             and aktivitet.id = deltaker_aktivitet_mapping.aktivitetskort_id
+    ORDER BY id, slutt desc
 )
 insert into oppfolgingsperioder(id, slutt)
 select id, slutt from oppfolgingsperioder_select;
