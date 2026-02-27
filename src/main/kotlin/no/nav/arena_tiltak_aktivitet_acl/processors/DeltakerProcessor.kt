@@ -91,6 +91,7 @@ open class DeltakerProcessor(
 			if (deltakelse.opprettetFørMenAktivEtterLansering()) {
 				getOppfolgingsperiodeForPersonVedLansering(personIdent)
 			} else getOppfolgingsPeriodeOrThrow(deltakelse, personIdent)
+		syncOppfolgingsperioder(periodeMatch.allePerioder)
 		val endring = utledEndringsType(
 			periodeMatch,
 			deltakelse.tiltakdeltakelseId,
@@ -105,13 +106,10 @@ open class DeltakerProcessor(
 					"Endring på deltakelse ${deltakelse.tiltakdeltakelseId} på deltakerId ${deltakelse.tiltakdeltakelseId} til ny aktivitetsid ${endring.aktivitetskortId} og oppfølgingsperiode ${periodeMatch.oppfolgingsperiode.uuid}. " +
 						"Oppretter nytt aktivitetskort id:${endring.aktivitetskortId} for personIdent $personIdent og endrer eksisterende translation entry"
 				)
-				syncOppfolgingsperioder(deltakelse.tiltakdeltakelseId, periodeMatch.allePerioder)
 			}
-
 			is EndringsType.NyttAktivitetskort -> {}
 			is EndringsType.OppdaterAktivitet -> {
 				log.info("Patcher oppfølgingsperiode sluttdato for aktivitet deltakerId:${deltakelse.tiltakdeltakelseId}")
-				syncOppfolgingsperioder(deltakelse.tiltakdeltakelseId, periodeMatch.allePerioder)
 			}
 		}
 
@@ -287,7 +285,7 @@ open class DeltakerProcessor(
 
 			// Har ingen tidligere aktivitetskort
 			alleAktivitetsKortByPeriode.isEmpty() -> EndringsType.NyttAktivitetskort(
-				getAkivitetskortId(deltakelseId, periodeMatch),
+				getOrCreateAkivitetskortId(deltakelseId, periodeMatch),
 				periodeMatch.oppfolgingsperiode,
 				skalIgnoreres
 			)
@@ -301,12 +299,12 @@ open class DeltakerProcessor(
 			else -> EndringsType.NyttAktivitetskortByttPeriode(
 				periodeMatch.oppfolgingsperiode,
 				skalIgnoreres,
-				getAkivitetskortId(deltakelseId, periodeMatch)
+				getOrCreateAkivitetskortId(deltakelseId, periodeMatch)
 			)
 		}
 	}
 
-	fun getAkivitetskortId(deltakelseId: DeltakelseId, periodeMatch: FinnOppfolgingResult.FunnetPeriodeResult): UUID {
+	fun getOrCreateAkivitetskortId(deltakelseId: DeltakelseId, periodeMatch: FinnOppfolgingResult.FunnetPeriodeResult): UUID {
 		return aktivitetskortIdService.getOrCreate(
 			ArenaId(deltakelseId, AktivitetKategori.TILTAKSAKTIVITET),
 			FerdigMatchetPeriode(periodeMatch.oppfolgingsperiode, periodeMatch.allePerioder)
@@ -320,8 +318,8 @@ open class DeltakerProcessor(
 			}
 	}
 
-	fun syncOppfolgingsperioder(deltakelseId: DeltakelseId, oppfolginsperioder: List<Oppfolgingsperiode>) {
-		aktivitetService.closeClosedPerioder(deltakelseId, AktivitetKategori.TILTAKSAKTIVITET, oppfolginsperioder)
+	fun syncOppfolgingsperioder(oppfolginsperioder: List<Oppfolgingsperiode>) {
+		aktivitetService.upsertPerioder(oppfolginsperioder)
 	}
 
 	private fun TiltakDeltakelse.opprettetFørLansering(): Boolean {

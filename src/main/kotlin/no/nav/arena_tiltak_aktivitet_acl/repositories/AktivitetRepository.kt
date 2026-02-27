@@ -1,6 +1,7 @@
 package no.nav.arena_tiltak_aktivitet_acl.repositories
 
 import no.nav.arena_tiltak_aktivitet_acl.clients.oppfolging.AvsluttetOppfolgingsperiode
+import no.nav.arena_tiltak_aktivitet_acl.clients.oppfolging.Oppfolgingsperiode
 import no.nav.arena_tiltak_aktivitet_acl.domain.kafka.aktivitet.AktivitetKategori
 import no.nav.arena_tiltak_aktivitet_acl.domain.kafka.arena.tiltak.DeltakelseId
 import no.nav.arena_tiltak_aktivitet_acl.services.ArenaId
@@ -25,7 +26,7 @@ class AktivitetRepository(
 	fun upsert(aktivitet: AktivitetDbo) {
 		@Language("PostgreSQL")
 		val sql = """
-			INSERT INTO aktivitet(id, person_ident, kategori_type, data, arena_id, tiltak_kode, oppfolgingsperiode_uuid, oppfolgingsperiode_slutt_tidspunkt, forelopig_ignorert)
+			INSERT INTO aktivitet(id, person_ident, kategori_type, data, arena_id, tiltak_kode, oppfolgingsperiode_uuid, forelopig_ignorert)
 			VALUES (:id,
 					:person_ident,
 					:kategori_type,
@@ -33,11 +34,9 @@ class AktivitetRepository(
 					:arena_id,
 					:tiltak_kode,
 					:oppfolgingsperiode_uuid,
-					:oppfolgingsperiode_slutt_tidspunkt,
 					:forelopig_ignorert)
 			ON CONFLICT ON CONSTRAINT aktivitet_pkey
 			DO UPDATE SET data = :data::jsonb,
-				oppfolgingsperiode_slutt_tidspunkt = :oppfolgingsperiode_slutt_tidspunkt,
 				oppfolgingsperiode_uuid = :oppfolgingsperiode_uuid,
 				forelopig_ignorert = :forelopig_ignorert
 		""".trimIndent()
@@ -51,7 +50,6 @@ class AktivitetRepository(
 				"arena_id" to aktivitet.arenaId,
 				"tiltak_kode" to aktivitet.tiltakKode,
 				"oppfolgingsperiode_uuid" to aktivitet.oppfolgingsperiodeUUID,
-				"oppfolgingsperiode_slutt_tidspunkt" to aktivitet.oppfolgingsSluttTidspunkt?.toOffsetDateTime(),
 				"forelopig_ignorert" to aktivitet.forelopigIgnorert
 			)
 		)
@@ -77,8 +75,8 @@ class AktivitetRepository(
 			SELECT DISTINCT ON (arena_id)
 				arena_id,
 			    aktivitet.id,
-			    COALESCE(aktivitet.oppfolgingsperiode_slutt_tidspunkt, TO_TIMESTAMP('9999', 'YYYY')) slutt
-			FROM aktivitet
+			    COALESCE(oppfolgingsperioder.slutt, TO_TIMESTAMP('9999', 'YYYY')) slutt
+			FROM aktivitet JOIN oppfolgingsperioder ON aktivitet.oppfolgingsperiode_uuid = oppfolgingsperioder.id
 			WHERE arena_id = :arenaId
 			ORDER BY arena_id, slutt DESC
 		""".trimIndent()
@@ -98,11 +96,12 @@ class AktivitetRepository(
 		val sql = """
 			SELECT
 				oppfolgingsperiode_uuid as oppfolgingsPeriode,
-				id,
-				oppfolgingsperiode_slutt_tidspunkt,
-				COALESCE(aktivitet.oppfolgingsperiode_slutt_tidspunkt, TO_TIMESTAMP('9999', 'YYYY')) oppfolging_slutt_tidspunkt_eller_max,
+				aktivitet.id,
+				oppfolgingsperioder.slutt as slutt,
+				COALESCE(oppfolgingsperioder.slutt, TO_TIMESTAMP('9999', 'YYYY')) oppfolging_slutt_tidspunkt_eller_max,
 				person_ident
-			FROM aktivitet WHERE arena_id = :arenaId
+			FROM aktivitet JOIN oppfolgingsperioder ON aktivitet.oppfolgingsperiode_uuid = oppfolgingsperioder.id
+			WHERE arena_id = :arenaId
 			ORDER BY oppfolging_slutt_tidspunkt_eller_max DESC
 		""".trimIndent()
 		val params = mapOf("arenaId" to "${arendaId.aktivitetKategori.prefix}${arendaId.deltakelseId.value}")
@@ -110,24 +109,39 @@ class AktivitetRepository(
 			AktivitetMetaData(
 				row.getUUID("id"),
 				row.getUUID("oppfolgingsPeriode"),
-				row.getNullableZonedDateTime("oppfolgingsperiode_slutt_tidspunkt"),
+				row.getNullableZonedDateTime("slutt"),
 				row.getString("person_ident")) }
 			.groupBy { it.oppfolgingsPeriode }
 			.mapValues { it.value.first() }
 	}
 
-	fun closeClosedPerioder(deltakelseId: DeltakelseId, aktivitetKategori: AktivitetKategori, oppfolgingsperioder: List<AvsluttetOppfolgingsperiode>) {
+	fun upsertPeriode(oppfolgingsperiode: Oppfolgingsperiode) {
 		@Language("PostgreSQL")
 		val sql = """
-			UPDATE aktivitet SET oppfolgingsperiode_slutt_tidspunkt = :slutt
-			WHERE arena_id = :arenaId and oppfolgingsperiode_uuid = :oppfolgingsperiode
+			INSERT INTO oppfolgingsperioder(id, start, slutt)
+			VALUES (:oppfolgingsperiodeId, :start, :slutt)
+			ON CONFLICT (id) DO UPDATE
+			SET slutt = :slutt
+		""".trimIndent()
+		val params = mapOf(
+			"slutt" to oppfolgingsperiode.sluttTidspunkt?.toOffsetDateTime(),
+			"oppfolgingsperiodeId" to oppfolgingsperiode.uuid,
+			"start" to oppfolgingsperiode.startTidspunkt.toOffsetDateTime(),
+		)
+		template.update(sql, params)
+	}
+
+	fun closeClosedPerioder(oppfolgingsperioder: List<AvsluttetOppfolgingsperiode>) {
+		@Language("PostgreSQL")
+		val sql = """
+			UPDATE oppfolgingsperioder SET slutt = :slutt, updated_at = now()
+			WHERE id = :oppfolgingsperiodeId
 		""".trimIndent()
 		val params = oppfolgingsperioder
 			.map {
 				mapOf(
-					"arenaId" to "${aktivitetKategori.prefix}${deltakelseId.value}",
 					"slutt" to it.sluttDato.toOffsetDateTime(),
-					"oppfolgingsperiode" to it.uuid
+					"oppfolgingsperiodeId" to it.uuid
 				)
 			}.toTypedArray()
 		template.batchUpdate(sql, params)
@@ -143,7 +157,6 @@ fun ResultSet.toAktivitetDbo() =
 		arenaId = this.getString("arena_id"),
 		tiltakKode = this.getString("tiltak_kode"),
 		oppfolgingsperiodeUUID = this.getUUID("oppfolgingsperiode_uuid"),
-		oppfolgingsSluttTidspunkt = this.getNullableZonedDateTime("oppfolgingsperiode_slutt_tidspunkt"),
 	)
 
 data class AktivitetMetaData(

@@ -9,6 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
+import no.nav.arena_tiltak_aktivitet_acl.clients.oppfolging.Oppfolgingsperiode
 import no.nav.arena_tiltak_aktivitet_acl.domain.kafka.aktivitet.*
 import no.nav.arena_tiltak_aktivitet_acl.domain.kafka.arena.tiltak.DeltakelseId
 import no.nav.arena_tiltak_aktivitet_acl.historiserteDeltakerFix.arenaYearfirstFormat
@@ -99,7 +100,6 @@ class AktivitetServiceTest : IntegrationTestBase() {
 		slowAktivitetRepository(),
 		forelopigAktivitetskortIdRepository,
 		advisoryLockRepository,
-		deltakerAktivitetMappingRespository,
 	)
 
 	@Test
@@ -115,6 +115,13 @@ class AktivitetServiceTest : IntegrationTestBase() {
 			val first = async(Dispatchers.IO) {
 				transactionTemplate.executeWithoutResult {
 					startOrder.add(1)
+					aktivitetRepository.upsertPeriode(
+						Oppfolgingsperiode(
+							headers.oppfolgingsperiode,
+							startTidspunkt = ZonedDateTime.now(),
+							headers.oppfolgingsSluttDato
+						)
+					)
 					firstSlowAktivitetsService.upsert(
 						aktivitetskort,
 						headers,
@@ -151,9 +158,17 @@ class AktivitetServiceTest : IntegrationTestBase() {
 		kotlinx.coroutines.runBlocking {
 			val first = async(Dispatchers.IO) {
 				transactionTemplate.executeWithoutResult {
+					val headers = headers(deltakelseId)
+					aktivitetRepository.upsertPeriode(
+						Oppfolgingsperiode(
+							headers.oppfolgingsperiode,
+							startTidspunkt = ZonedDateTime.now(),
+							headers.oppfolgingsSluttDato
+						)
+					)
 					firstSlowAktivitetsService.upsert(
 						aktivitetskort(),
-						headers(deltakelseId),
+						headers,
 						deltakelseId,
 					)
 					excutionOrder.add(deltakelseId.value)
@@ -162,9 +177,17 @@ class AktivitetServiceTest : IntegrationTestBase() {
 			val second = async(Dispatchers.IO) {
 				delay(10)
 				transactionTemplate.executeWithoutResult {
+					val headers = headers(deltakelseId2)
+					aktivitetRepository.upsertPeriode(
+						Oppfolgingsperiode(
+							headers.oppfolgingsperiode,
+							startTidspunkt = ZonedDateTime.now(),
+							headers.oppfolgingsSluttDato
+						)
+					)
 					firstSlowAktivitetsService.upsert(
 						aktivitetskort(),
-						headers(deltakelseId2),
+						headers,
 						deltakelseId2,
 					)
 					excutionOrder.add(deltakelseId2.value)

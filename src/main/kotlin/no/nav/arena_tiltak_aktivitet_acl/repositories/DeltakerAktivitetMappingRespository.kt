@@ -30,67 +30,31 @@ open class DeltakerAktivitetMappingRespository(
 				aktivitetskort_id,
 				aktivitet_kategori,
 				oppfolgingsperiode_id,
-				aktivitet.oppfolgingsperiode_slutt_tidspunkt,
-				COALESCE(aktivitet.oppfolgingsperiode_slutt_tidspunkt, TO_TIMESTAMP('9999', 'YYYY')) slutt
+				oppfolgingsperioder.slutt as slutt,
+				COALESCE(oppfolgingsperioder.slutt, TO_TIMESTAMP('9999', 'YYYY')) slutt_sort
 			FROM deltaker_aktivitet_mapping
-			inner join aktivitet on deltaker_aktivitet_mapping.oppfolgingsperiode_id = aktivitet.oppfolgingsperiode_uuid
-			WHERE deltaker_id = :deltaker_id and aktivitet_kategori = :aktivitet_kategori and aktivitet.id = deltaker_aktivitet_mapping.aktivitetskort_id
-			ORDER BY deltaker_id, slutt desc
+			JOIN oppfolgingsperioder ON deltaker_aktivitet_mapping.oppfolgingsperiode_id = oppfolgingsperioder.id
+			WHERE deltaker_id = :deltaker_id
+				AND aktivitet_kategori = :aktivitet_kategori
+			ORDER BY deltaker_id, slutt_sort desc
 		""".trimIndent()
 		val parameters = mapOf("deltaker_id" to deltakelseId.value, "aktivitet_kategori" to aktivitetKategori.name)
 		return template.query(sql, parameters) { row, _ -> row.toDbo() }
 			.firstOrNull()
 	}
 
-	open fun getByPeriode(deltakelseId: DeltakelseId, aktivitetKategori: AktivitetKategori, oppfolgingsPeriodeId: UUID): DeltakerAktivitetMappingDbo? {
-		val sql = """
-			SELECT
-				deltaker_id,
-				aktivitetskort_id,
-				aktivitet_kategori,
-				oppfolgingsperiode_id,
-				oppfolgingsperiode_slutttidspunkt
-			FROM deltaker_aktivitet_mapping
-			WHERE deltaker_id = :deltaker_id
-				and aktivitet_kategori = :aktivitet_kategori
-				and oppfolgingsperiode_id = :oppfolgingsperiode_id
-		""".trimIndent()
-		val parameters = mapOf(
-			"deltaker_id" to deltakelseId.value,
-			"aktivitet_kategori" to aktivitetKategori.name,
-			"oppfolgingsperiode_id" to oppfolgingsPeriodeId
-		)
-		return template.query(sql, parameters) { row, _ -> row.toDbo() }
-			.let { if (it.size > 1) throw IllegalStateException("Expected only one result, but found ${it.size}") else it }
-			.firstOrNull()
-	}
-
 	open fun insert(dbo: DeltakerAktivitetMappingDbo): Int {
 		val sql = """
-			INSERT INTO deltaker_aktivitet_mapping(deltaker_id, aktivitetskort_id, aktivitet_kategori, oppfolgingsperiode_id, oppfolgingsperiode_slutttidspunkt)
-		 	VALUES (:deltaker_id, :aktivitet_id, :aktivitet_kategori, :oppfolgingsperiode_id, :oppfolgingsperiode_slutttidspunkt)
+			INSERT INTO deltaker_aktivitet_mapping(deltaker_id, aktivitetskort_id, aktivitet_kategori, oppfolgingsperiode_id)
+		 	VALUES (:deltaker_id, :aktivitet_id, :aktivitet_kategori, :oppfolgingsperiode_id)
 		""".trimIndent()
 		val parameters = mapOf(
 			"deltaker_id" to dbo.deltakelseId,
 			"aktivitet_id" to dbo.aktivitetId,
 			"aktivitet_kategori" to dbo.aktivitetKategori,
-			"oppfolgingsperiode_id" to dbo.oppfolgingsPeriodeId,
-			"oppfolgingsperiode_slutttidspunkt" to dbo.oppfolgingsPeriodeSluttTidspunkt?.toOffsetDateTime(),
+			"oppfolgingsperiode_id" to dbo.oppfolgingsPeriodeId
 		)
 		return template.update(sql, parameters)
-	}
-
-	open fun markerOppfølgingsperiodeSomAvsluttet(oppfølgingsperiodeId: UUID, sluttTidspunkt: ZonedDateTime) {
-		val sql = """
-			UPDATE deltaker_aktivitet_mapping
-			SET oppfolgingsperiode_slutttidspunkt = :slutt_tidspunkt
-			WHERE oppfolgingsperiode_id = :oppfolgingsperiode_id
-		""".trimIndent()
-		val parameters = mapOf(
-			"slutt_tidspunkt" to sluttTidspunkt.toOffsetDateTime(),
-			"oppfolgingsperiode_id" to oppfølgingsperiodeId
-		)
-		template.update(sql, parameters)
 	}
 }
 
@@ -100,6 +64,6 @@ fun ResultSet.toDbo(): DeltakerAktivitetMappingDbo {
 		aktivitetId = this.getUUID("aktivitetskort_id"),
 		aktivitetKategori = this.getString("aktivitet_kategori"),
 		oppfolgingsPeriodeId = this.getUUID("oppfolgingsperiode_id"),
-		oppfolgingsPeriodeSluttTidspunkt = this.getNullableZonedDateTime("oppfolgingsperiode_slutt_tidspunkt"),
+		oppfolgingsPeriodeSluttTidspunkt = this.getNullableZonedDateTime("slutt"),
 	)
 }
