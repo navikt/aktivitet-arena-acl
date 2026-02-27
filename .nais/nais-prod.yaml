@@ -34,8 +34,6 @@ spec:
       enabled: true
   kafka:
     pool: nav-prod
-  secureLogs:
-    enabled: true
   observability:
     logging:
       destinations:
@@ -50,6 +48,8 @@ spec:
         - application: tiltaksgjennomforing-api
           namespace: arbeidsgiver
           cluster: prod-fss
+        - application: logging
+          namespace: nais-system
     outbound:
       rules:
         - application: amt-enhetsregister

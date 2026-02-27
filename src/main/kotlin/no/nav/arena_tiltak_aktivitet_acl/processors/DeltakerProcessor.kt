@@ -18,7 +18,7 @@ import no.nav.arena_tiltak_aktivitet_acl.repositories.GjennomforingRepository
 import no.nav.arena_tiltak_aktivitet_acl.services.*
 import no.nav.arena_tiltak_aktivitet_acl.services.OppfolgingsperiodeService.Companion.defaultSlakk
 import no.nav.arena_tiltak_aktivitet_acl.services.OppfolgingsperiodeService.Companion.tidspunktTidligereEnnRettFoerStartDato
-import no.nav.arena_tiltak_aktivitet_acl.utils.SecureLog.secureLog
+import no.nav.arena_tiltak_aktivitet_acl.utils.TeamLog.teamLog
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Propagation
@@ -102,7 +102,7 @@ open class DeltakerProcessor(
 		)
 		when (endring) {
 			is EndringsType.NyttAktivitetskortByttPeriode -> {
-				secureLog.info(
+				teamLog.info(
 					"Endring på deltakelse ${deltakelse.tiltakdeltakelseId} på deltakerId ${deltakelse.tiltakdeltakelseId} til ny aktivitetsid ${endring.aktivitetskortId} og oppfølgingsperiode ${periodeMatch.oppfolgingsperiode.uuid}. " +
 						"Oppretter nytt aktivitetskort id:${endring.aktivitetskortId} for personIdent $personIdent og endrer eksisterende translation entry"
 				)
@@ -163,7 +163,7 @@ open class DeltakerProcessor(
 
 		arenaDataRepository.upsert(message.toUpsertInputWithStatusHandled(deltakelse.tiltakdeltakelseId))
 		val outgoingMessage = aktivitet.toKafkaMessage()
-		secureLog.info("Sender melding for aktivitetskort id=${endring.aktivitetskortId} arenaId=${deltakelse.tiltakdeltakelseId} personId=${deltakelse.personId} fnr=$personIdent")
+		teamLog.info("Sender melding for aktivitetskort id=${endring.aktivitetskortId} arenaId=${deltakelse.tiltakdeltakelseId} personId=${deltakelse.personId} fnr=$personIdent")
 		log.info("Sender medling messageId=${outgoingMessage.messageId} aktivitetskort id=$endring.aktivitetskortId  arenaId=${deltakelse.tiltakdeltakelseId} type=${outgoingMessage.actionType}")
 		kafkaProducerService.sendTilAktivitetskortTopic(
 			aktivitet.id,
@@ -204,7 +204,7 @@ open class DeltakerProcessor(
 		tidspunkt: LocalDateTime,
 		tiltakDeltakelseId: DeltakelseId
 	): Nothing {
-		secureLog.info("Fant ikke oppfølgingsperiode for personIdent=$personIdent")
+		teamLog.info("Fant ikke oppfølgingsperiode for personIdent=$personIdent")
 		val erFerdig = deltakelse.datoTil?.isBefore(LocalDate.now()) ?: false
 		when {
 			deltakelse.erAvsluttet() || erFerdig ->
