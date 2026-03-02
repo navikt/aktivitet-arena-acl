@@ -48,8 +48,6 @@ spec:
         - application: tiltaksgjennomforing-api
           namespace: arbeidsgiver
           cluster: dev-fss
-        - application: logging
-          namespace: nais-system
     outbound:
       rules:
         - application: amt-enhetsregister
@@ -57,6 +55,8 @@ spec:
           cluster: dev-gcp
         - application: veilarboppfolging
           namespace: poao
+        - application: logging
+          namespace: nais-system
       external:
         - host: amt-arena-ords-proxy.dev-fss-pub.nais.io
         - host: veilarboppfolging.dev-fss-pub.nais.io
