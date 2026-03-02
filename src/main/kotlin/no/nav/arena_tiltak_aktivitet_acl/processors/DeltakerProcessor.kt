@@ -221,10 +221,6 @@ open class DeltakerProcessor(
 		deltaker: TiltakDeltakelse,
 		personIdent: String
 	): FinnOppfolgingResult.FunnetPeriodeResult {
-		// TODO: fjern før merging av branch
-		teamLog.info(
-			"Dummy log"
-		)
 		val oppslagsDato = deltaker.datoTil
 			?.let { tilDato -> minOf(tilDato.atStartOfDay(), deltaker.modDato) } ?: deltaker.modDato
 		val funnetPeriode = oppfolgingsperiodeService.finnOppfolgingsperiode(personIdent, oppslagsDato)

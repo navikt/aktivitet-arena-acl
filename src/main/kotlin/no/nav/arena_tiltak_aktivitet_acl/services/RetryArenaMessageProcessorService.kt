@@ -82,9 +82,6 @@ open class RetryArenaMessageProcessorService(
 				 arenaDataRepository.getByIngestStatus(tableName, status, startOperationTs, batchSize)
 			}
 			log.info("Starting on batch with ${timedStartBatch.value.size} messages table: $tableName fetched in :${timedStartBatch.duration.inWholeSeconds} seconds")
-			teamLog.info(
-				"Dummy log. SKal ikke dukke opp i vanlig log"
-			)
 			return@runBlocking processNextBatch(timedStartBatch.value)
 		}
 
