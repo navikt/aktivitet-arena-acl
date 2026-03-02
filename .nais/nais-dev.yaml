@@ -34,8 +34,6 @@ spec:
       enabled: true
   kafka:
     pool: nav-dev
-  secureLogs:
-    enabled: true
   observability:
     logging:
       destinations:
@@ -57,6 +55,8 @@ spec:
           cluster: dev-gcp
         - application: veilarboppfolging
           namespace: poao
+        - application: logging
+          namespace: nais-system
       external:
         - host: amt-arena-ords-proxy.dev-fss-pub.nais.io
         - host: veilarboppfolging.dev-fss-pub.nais.io

@@ -2,7 +2,7 @@ package no.nav.arena_tiltak_aktivitet_acl.services
 
 import no.nav.arena_tiltak_aktivitet_acl.clients.oppfolging.OppfolgingClient
 import no.nav.arena_tiltak_aktivitet_acl.clients.oppfolging.Oppfolgingsperiode
-import no.nav.arena_tiltak_aktivitet_acl.utils.SecureLog.secureLog
+import no.nav.arena_tiltak_aktivitet_acl.utils.TeamLog.teamLog
 import org.springframework.stereotype.Service
 import java.time.Duration
 import java.time.LocalDateTime
@@ -35,7 +35,7 @@ open class OppfolgingsperiodeService(
 	fun finnOppfolgingsperiode(fnr: String, tidspunkt: LocalDateTime): FinnOppfolgingResult {
 		val oppfolgingsperioder = hentAlleOppfolgingsperioder(fnr)
 		if (oppfolgingsperioder.isEmpty()) {
-			secureLog.info(
+			teamLog.info(
 				"Arenatiltak finn oppfølgingsperiode - bruker har ingen oppfølgingsperioder - fnr={}, tidspunkt={}, oppfolgingsperioder={}",
 				fnr, tidspunkt, listOf<Oppfolgingsperiode>()
 			)
@@ -52,13 +52,13 @@ open class OppfolgingsperiodeService(
 				.minByOrNull { abs(ChronoUnit.MILLIS.between(tidspunktZDT, it.startTidspunkt)) }
 				.let { periodeMatch ->
 					if (periodeMatch == null || !tidspunktRettFoerStartDatoEllerSenere(tidspunkt, periodeMatch.startTidspunkt.toLocalDateTime(), defaultSlakk)) {
-						secureLog.info(
+						teamLog.info(
 							"Arenatiltak finn oppfølgingsperiode - tidspunkt har ingen god match på oppfølgingsperioder) - fnr={}, tidspunkt={}, oppfolgingsperioder={}",
 							fnr, tidspunkt, oppfolgingsperioder
 						)
 						null
 					} else {
-						secureLog.info(
+						teamLog.info(
 							"Arenatiltak finn oppfølgingsperiode - tidspunkt innen {} oppfølging startdato) - fnr={}, tidspunkt={}, oppfolgingsperioder={}",
 							defaultSlakk, fnr, tidspunkt, oppfolgingsperioder
 						)

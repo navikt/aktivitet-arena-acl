@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
     <include resource="no/nav/common/log/logback-stdout-json.xml"/>
-    <include resource="no/nav/common/log/logback-securelogs.xml"/>
     <logger name="no.nav.arena_tiltak_aktivitet_acl" level="DEBUG"/>
     <logger name="no.nav.common" level="DEBUG"/>
+    <include resource="logback-team-logs.xml"/>
 </configuration>

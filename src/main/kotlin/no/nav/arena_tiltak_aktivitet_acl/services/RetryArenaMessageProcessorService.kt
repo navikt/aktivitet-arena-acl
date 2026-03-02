@@ -21,6 +21,7 @@ import java.time.Duration
 import java.time.Instant
 import java.time.LocalDateTime
 import kotlin.time.measureTimedValue
+import no.nav.arena_tiltak_aktivitet_acl.utils.TeamLog.teamLog
 
 @Service
 open class RetryArenaMessageProcessorService(
