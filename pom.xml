@@ -25,14 +25,14 @@
         <java.version>21</java.version>
 
         <common.version>3.2025.09.03_08.33-728ff4acbfdb</common.version>
-        <kotest.version>5.7.2</kotest.version>
+        <kotest.version>5.9.1</kotest.version>
         <mockk.version>1.13.14</mockk.version>
-        <testcontainers.version>1.20.4</testcontainers.version>
+        <testcontainers.version>2.0.3</testcontainers.version>
         <token-support.version>5.0.37</token-support.version> <!-- NB keep in sync with spring-boot (for token-validation-spring) -->
         <nimbus.version>11.29.2</nimbus.version> <!-- NB keep in sync with token support-->
-        <mockito-kotlin.version>3.2.0</mockito-kotlin.version>
+        <mockito-kotlin.version>5.4.0</mockito-kotlin.version>
         <wiremock.version>3.10.0</wiremock.version>
-        <schedlock.version>4.33.0</schedlock.version>
+        <schedlock.version>6.10.0</schedlock.version>
 
         <sonar.projectKey>navikt_aktivitet-arena-acl</sonar.projectKey>
         <sonar.organization>navikt</sonar.organization>
@@ -231,7 +231,14 @@
         </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
-            <artifactId>postgresql</artifactId>
+            <artifactId>testcontainers</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-postgresql</artifactId>
+            <version>${testcontainers.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
