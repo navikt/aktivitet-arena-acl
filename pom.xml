@@ -32,7 +32,7 @@
         <nimbus.version>11.29.2</nimbus.version> <!-- NB keep in sync with token support-->
         <mockito-kotlin.version>6.3.0</mockito-kotlin.version>
         <wiremock.version>3.13.2</wiremock.version>
-        <schedlock.version>6.10.0</schedlock.version>
+        <schedlock.version>7.7.0</schedlock.version>
 
         <sonar.projectKey>navikt_aktivitet-arena-acl</sonar.projectKey>
         <sonar.organization>navikt</sonar.organization>
