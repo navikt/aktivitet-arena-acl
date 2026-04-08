@@ -25,7 +25,7 @@
         <java.version>21</java.version>
 
         <common.version>3.2026.03.03_07.58-86d37775258a</common.version>
-        <kotest.version>5.9.1</kotest.version>
+        <kotest.version>6.1.11</kotest.version>
         <mockk.version>1.13.14</mockk.version>
         <testcontainers.version>2.0.4</testcontainers.version>
         <token-support.version>5.0.37</token-support.version> <!-- NB keep in sync with spring-boot (for token-validation-spring) -->
