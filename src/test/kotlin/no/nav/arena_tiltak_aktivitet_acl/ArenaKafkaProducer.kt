@@ -7,7 +7,6 @@ import no.nav.common.kafka.producer.KafkaProducerClientImpl
 import no.nav.common.kafka.util.KafkaPropertiesBuilder
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization.StringSerializer
-import org.junit.Test
 import org.slf4j.LoggerFactory
 import java.util.*
 

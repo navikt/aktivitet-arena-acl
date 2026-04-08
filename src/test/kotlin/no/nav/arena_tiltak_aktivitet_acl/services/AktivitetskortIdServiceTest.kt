@@ -22,7 +22,7 @@ import no.nav.arena_tiltak_aktivitet_acl.repositories.FantIdITranslationTabell
 import no.nav.arena_tiltak_aktivitet_acl.repositories.ForelopigAktivitetskortId
 import no.nav.arena_tiltak_aktivitet_acl.repositories.ForelopigAktivitetskortIdRepository
 import no.nav.arena_tiltak_aktivitet_acl.repositories.NyForelopigId
-import org.junit.Test
+import org.junit.jupiter.api.Test
 import java.time.ZonedDateTime
 import java.util.UUID
 

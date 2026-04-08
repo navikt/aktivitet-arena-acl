@@ -24,14 +24,14 @@
         <kotlin.compiler.apiVersion>2.0</kotlin.compiler.apiVersion>
         <java.version>21</java.version>
 
-        <common.version>3.2025.09.03_08.33-728ff4acbfdb</common.version>
+        <common.version>3.2026.03.03_07.58-86d37775258a</common.version>
         <kotest.version>5.9.1</kotest.version>
         <mockk.version>1.13.14</mockk.version>
-        <testcontainers.version>2.0.3</testcontainers.version>
+        <testcontainers.version>2.0.4</testcontainers.version>
         <token-support.version>5.0.37</token-support.version> <!-- NB keep in sync with spring-boot (for token-validation-spring) -->
         <nimbus.version>11.29.2</nimbus.version> <!-- NB keep in sync with token support-->
-        <mockito-kotlin.version>5.4.0</mockito-kotlin.version>
-        <wiremock.version>3.10.0</wiremock.version>
+        <mockito-kotlin.version>6.3.0</mockito-kotlin.version>
+        <wiremock.version>3.13.2</wiremock.version>
         <schedlock.version>6.10.0</schedlock.version>
 
         <sonar.projectKey>navikt_aktivitet-arena-acl</sonar.projectKey>
@@ -70,7 +70,7 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.12</version>
+                <version>0.8.14</version>
             </plugin>
         </plugins>
     </build>
@@ -307,7 +307,7 @@
         <dependency>
             <groupId>org.jetbrains.kotlinx</groupId>
             <artifactId>kotlinx-coroutines-core</artifactId>
-            <version>1.10.1</version>
+            <version>1.10.2</version>
         </dependency>
     </dependencies>
 
