@@ -4,7 +4,6 @@ import io.getunleash.Unleash
 import no.nav.arena_tiltak_aktivitet_acl.repositories.ArenaDataRepository
 import no.nav.arena_tiltak_aktivitet_acl.services.RetryArenaMessageProcessorService
 import no.nav.arena_tiltak_aktivitet_acl.utils.AT_MIDNIGHT
-import no.nav.arena_tiltak_aktivitet_acl.utils.ONE_MINUTE
 import no.nav.common.job.JobRunner
 import no.nav.common.job.leader_election.LeaderElectionClient
 import org.slf4j.LoggerFactory
@@ -24,7 +23,10 @@ open class ArenaDataSchedules(
 	@Scheduled(fixedDelay = 10 * 1000L, initialDelayString = "\${app.env.scheduled.default.initialDelay}")
 	open fun processArenaMessages() {
 		if (leaderElectionClient.isLeader && unleash.isEnabled("aktivitet-arena-acl.batch.enabled")) {
+			log.info("Er leder. Kjører jobb og toggle er på")
 			JobRunner.run("process_arena_messages", retryArenaMessageProcessorService::processMessages)
+		} else if (leaderElectionClient.isLeader && !unleash.isEnabled("aktivitet-arena-acl.batch.enabled")) {
+			log.info("Er leder men toggle er disabled, så kjører ikke jobb")
 		}
 	}
 
