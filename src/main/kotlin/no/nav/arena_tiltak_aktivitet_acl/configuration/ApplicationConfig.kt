@@ -32,10 +32,9 @@ open class ApplicationConfig {
 
 	@Bean
 	open fun logRequestFilterRegistrationBean(): FilterRegistrationBean<LogRequestFilter> {
-		val registration = FilterRegistrationBean<LogRequestFilter>()
-		registration.filter = LogRequestFilter(
-			APPLICATION_NAME, EnvironmentUtils.isDevelopment().orElse(false)
-		)
+		val registration =
+			FilterRegistrationBean(LogRequestFilter(APPLICATION_NAME, EnvironmentUtils.isDevelopment().orElse(false)))
+
 		registration.order = 1
 		registration.addUrlPatterns("/*")
 		return registration

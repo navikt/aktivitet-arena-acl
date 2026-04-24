@@ -1,21 +1,19 @@
 package no.nav.arena_tiltak_aktivitet_acl.utils
 
-import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.MapperFeature
-import com.fasterxml.jackson.databind.SerializationFeature
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+
+import tools.jackson.databind.DeserializationFeature
+import tools.jackson.databind.cfg.DateTimeFeature
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.module.kotlin.KotlinModule
 
 object ObjectMapper {
 
-	private val instance = jacksonObjectMapper()
-		.registerKotlinModule()
-		.registerModule(JavaTimeModule())
-		.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-		.configure(MapperFeature.USE_STD_BEAN_NAMING, true)
-		.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-		.configure(DeserializationFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE, false)
+	private val instance = JsonMapper.builder()
+		.addModule(KotlinModule.Builder().build())
+		.disable(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS)
+		.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+		.disable(DateTimeFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE)
+		.build()
 
 	fun get() = instance!!
 
