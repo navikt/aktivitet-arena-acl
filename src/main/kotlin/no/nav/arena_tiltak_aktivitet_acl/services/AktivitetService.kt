@@ -9,7 +9,6 @@ import no.nav.arena_tiltak_aktivitet_acl.domain.kafka.arena.tiltak.DeltakelseId
 import no.nav.arena_tiltak_aktivitet_acl.repositories.AdvisoryLockRepository
 import no.nav.arena_tiltak_aktivitet_acl.repositories.AktivitetRepository
 import no.nav.arena_tiltak_aktivitet_acl.repositories.ForelopigAktivitetskortIdRepository
-import no.nav.arena_tiltak_aktivitet_acl.repositories.DeltakerAktivitetMappingRespository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
@@ -17,9 +16,9 @@ import java.util.*
 
 @Service
 open class AktivitetService(
-	val aktivitetRepository: AktivitetRepository,
-	val forelopigAktivitetskortIdRepository: ForelopigAktivitetskortIdRepository,
-	val deltakerLockRepository: AdvisoryLockRepository,
+	private val aktivitetRepository: AktivitetRepository,
+	private val forelopigAktivitetskortIdRepository: ForelopigAktivitetskortIdRepository,
+	private val deltakerLockRepository: AdvisoryLockRepository,
 ) {
 	/**
 	 * SafeDeltakelse will make sure no other transaction is processing the same deltakelse for the duration of the ongoing transaction.

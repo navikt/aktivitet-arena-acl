@@ -20,10 +20,10 @@ import java.util.*
 
 @Service
 open class AktivitetskortIdService(
-	val aktivitetRepository: AktivitetRepository, // Brukes kun for å sjekke at aktivitetId er konsistent
-	val forelopigAktivitetskortIdRepository: ForelopigAktivitetskortIdRepository,
-	val advisoryLockRepository: AdvisoryLockRepository,
-	val deltakerAktivitetMappingRespository: DeltakerAktivitetMappingRespository
+	private val aktivitetRepository: AktivitetRepository, // Brukes kun for å sjekke at aktivitetId er konsistent
+	private val forelopigAktivitetskortIdRepository: ForelopigAktivitetskortIdRepository,
+	private val advisoryLockRepository: AdvisoryLockRepository,
+	private val deltakerAktivitetMappingRespository: DeltakerAktivitetMappingRespository
 ) {
 	private val log = LoggerFactory.getLogger(AktivitetskortIdService::class.java)
 
@@ -66,7 +66,7 @@ open class AktivitetskortIdService(
 	class Opprettet(val aktivitetskortId: UUID): AktivitetskortIdResult()
 	class Funnet(val aktivitetskortId: UUID): AktivitetskortIdResult()
 
-	fun ForelopigAktivitetskortId.toAktivitetskortIdResult(): AktivitetskortIdResult {
+	private fun ForelopigAktivitetskortId.toAktivitetskortIdResult(): AktivitetskortIdResult {
 		return when (this) {
 			is NyForelopigId -> Forelopig(this)
 			is EksisterendeForelopigId -> Forelopig(this)

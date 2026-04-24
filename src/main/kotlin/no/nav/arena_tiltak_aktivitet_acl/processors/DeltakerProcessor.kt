@@ -304,7 +304,7 @@ open class DeltakerProcessor(
 		}
 	}
 
-	fun getOrCreateAkivitetskortId(deltakelseId: DeltakelseId, periodeMatch: FinnOppfolgingResult.FunnetPeriodeResult): UUID {
+	private fun getOrCreateAkivitetskortId(deltakelseId: DeltakelseId, periodeMatch: FinnOppfolgingResult.FunnetPeriodeResult): UUID {
 		return aktivitetskortIdService.getOrCreate(
 			ArenaId(deltakelseId, AktivitetKategori.TILTAKSAKTIVITET),
 			FerdigMatchetPeriode(periodeMatch.oppfolgingsperiode, periodeMatch.allePerioder)
@@ -318,7 +318,7 @@ open class DeltakerProcessor(
 			}
 	}
 
-	fun syncOppfolgingsperioder(oppfolginsperioder: List<Oppfolgingsperiode>) {
+	private fun syncOppfolgingsperioder(oppfolginsperioder: List<Oppfolgingsperiode>) {
 		aktivitetService.upsertPerioder(oppfolginsperioder)
 	}
 
