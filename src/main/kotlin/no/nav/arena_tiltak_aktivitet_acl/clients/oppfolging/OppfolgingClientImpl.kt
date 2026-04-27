@@ -1,6 +1,6 @@
 package no.nav.arena_tiltak_aktivitet_acl.clients.oppfolging
 
-import com.fasterxml.jackson.module.kotlin.readValue
+import tools.jackson.module.kotlin.readValue
 import no.nav.arena_tiltak_aktivitet_acl.utils.ObjectMapper
 import no.nav.common.rest.client.RestClient.baseClient
 import okhttp3.OkHttpClient

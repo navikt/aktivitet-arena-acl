@@ -1,6 +1,6 @@
 package no.nav.arena_tiltak_aktivitet_acl.repositories
 
-import com.fasterxml.jackson.databind.JsonNode
+import tools.jackson.databind.JsonNode
 import io.micrometer.core.annotation.Timed
 import no.nav.arena_tiltak_aktivitet_acl.domain.db.ArenaDataDbo
 import no.nav.arena_tiltak_aktivitet_acl.domain.db.ArenaDataUpsertInput

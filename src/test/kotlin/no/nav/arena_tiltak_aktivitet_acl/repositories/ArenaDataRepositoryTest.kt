@@ -2,7 +2,7 @@ package no.nav.arena_tiltak_aktivitet_acl.repositories
 
 import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.Logger
-import com.fasterxml.jackson.databind.JsonNode
+import tools.jackson.databind.JsonNode
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe

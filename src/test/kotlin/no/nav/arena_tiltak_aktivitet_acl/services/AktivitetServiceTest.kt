@@ -1,6 +1,5 @@
 package no.nav.arena_tiltak_aktivitet_acl.services
 
-import io.kotest.common.runBlocking
 import io.kotest.matchers.collections.shouldContainInOrder
 import io.kotest.matchers.shouldBe
 import io.mockk.every
@@ -29,6 +28,7 @@ import java.time.LocalDateTime
 import java.time.ZonedDateTime
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlinx.coroutines.runBlocking
 
 class AktivitetServiceTest : IntegrationTestBase() {
 	val log = LoggerFactory.getLogger(javaClass)

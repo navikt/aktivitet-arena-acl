@@ -1,6 +1,5 @@
 package no.nav.arena_tiltak_aktivitet_acl.integration.executors
 
-import io.kotest.common.runBlocking
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeout
@@ -23,6 +22,7 @@ import no.nav.arena_tiltak_aktivitet_acl.services.ArenaId
 import no.nav.arena_tiltak_aktivitet_acl.utils.ArenaTableName
 import no.nav.common.kafka.producer.KafkaProducerClientImpl
 import java.time.LocalDateTime
+import kotlinx.coroutines.runBlocking
 
 class DeltakerTestExecutor(
 	kafkaProducer: KafkaProducerClientImpl<String, String>,
