@@ -26,10 +26,10 @@
 
         <common.version>3.2026.03.03_07.58-86d37775258a</common.version>
         <kotest.version>5.9.1</kotest.version>
-        <mockk.version>1.13.14</mockk.version>
-        <testcontainers.version>2.0.4</testcontainers.version>
+        <mockk.version>1.14.9</mockk.version>
+        <testcontainers.version>2.0.5</testcontainers.version>
         <token-support.version>5.0.37</token-support.version> <!-- NB keep in sync with spring-boot (for token-validation-spring) -->
-        <nimbus.version>11.29.2</nimbus.version> <!-- NB keep in sync with token support-->
+        <nimbus.version>11.37</nimbus.version> <!-- NB keep in sync with token support-->
         <mockito-kotlin.version>6.3.0</mockito-kotlin.version>
         <wiremock.version>3.13.2</wiremock.version>
         <schedlock.version>6.10.0</schedlock.version>
