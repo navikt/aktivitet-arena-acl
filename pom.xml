@@ -23,7 +23,7 @@
         <kotlin.version>2.3.20</kotlin.version>
         <java.version>21</java.version>
 
-        <common.version>4.2026.04.24_05.25-cab3c16705f7</common.version>
+        <common.version>4.2026.05.05_06.25-f72fab488a93</common.version>
         <kotest.version>6.1.11</kotest.version>
         <mockk.version>1.14.9</mockk.version>
         <testcontainers.version>2.0.5</testcontainers.version>
