@@ -18,7 +18,7 @@ data class ArenaTiltak(
     val ARKIVNOKKEL: String,
     val STATUS_ANSKAFFELSE: String,
     val MAKS_ANT_PLASSER: Int? = null,
-    val MAKS_ANT_SOKERE: Int,
+    val MAKS_ANT_SOKERE: Int?,
     val STATUS_FAST_ANT_PLASSER: String? = null,
     val STATUS_SJEKK_ANT_DELTAKERE: String? = null,
     val STATUS_KALKULATOR: String,
