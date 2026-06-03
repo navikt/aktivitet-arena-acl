@@ -23,7 +23,7 @@
         <kotlin.version>2.3.20</kotlin.version>
         <java.version>21</java.version>
 
-        <common.version>4.2026.05.05_06.25-f72fab488a93</common.version>
+        <common.version>4.2026.05.29_05.35-a81a45859c9c</common.version>
         <kotest.version>6.1.11</kotest.version>
         <mockk.version>1.14.9</mockk.version>
         <testcontainers.version>2.0.5</testcontainers.version>
@@ -291,7 +291,7 @@
         <dependency>
             <groupId>io.getunleash</groupId>
             <artifactId>unleash-client-java</artifactId>
-            <version>12.2.1</version>
+            <version>12.2.2</version>
         </dependency>
         <dependency>
             <groupId>org.jetbrains.kotlinx</groupId>
