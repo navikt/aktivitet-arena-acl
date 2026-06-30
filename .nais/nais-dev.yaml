@@ -94,7 +94,7 @@ spec:
   gcp:
     sqlInstances:
       - name: aktivitet-arena-acl-v1
-        type: POSTGRES_15
+        type: POSTGRES_16
         tier: db-custom-1-3840
         databases:
           - name: aktivitet-arena-acl
