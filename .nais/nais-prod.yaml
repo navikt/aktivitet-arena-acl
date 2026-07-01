@@ -29,6 +29,8 @@ spec:
     requests:
       cpu: 250m
       memory: 512Mi
+  strategy:
+    type: Recreate
   azure:
     application:
       enabled: true
@@ -90,8 +92,8 @@ spec:
   gcp:
     sqlInstances:
       - name: aktivitet-arena-acl-v1
-        type: POSTGRES_14
-        tier: db-custom-1-3840
+        type: POSTGRES_15
+        tier: db-custom-4-15360
         diskAutoresize: true
         pointInTimeRecovery: true
         databases:
