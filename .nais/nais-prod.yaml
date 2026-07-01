@@ -92,7 +92,7 @@ spec:
   gcp:
     sqlInstances:
       - name: aktivitet-arena-acl-v1
-        type: POSTGRES_16
+        type: POSTGRES_17
         tier: db-custom-4-15360
         diskAutoresize: true
         pointInTimeRecovery: true
