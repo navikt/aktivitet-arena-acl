@@ -23,8 +23,8 @@
         <kotlin.version>2.3.20</kotlin.version>
         <java.version>21</java.version>
 
-        <common.version>4.2026.06.25_10.50-baa9d54e3cd8</common.version>
-        <kotest.version>6.2.1</kotest.version>
+        <common.version>4.2026.07.10_05.48-e9835152ffc0</common.version>
+        <kotest.version>6.2.2</kotest.version>
         <mockk.version>1.14.11</mockk.version>
         <testcontainers.version>2.0.5</testcontainers.version>
         <token-support.version>6.0.11</token-support.version> <!-- NB keep in sync with spring-boot (for token-validation-spring) -->
