@@ -23,12 +23,12 @@
         <kotlin.version>2.3.20</kotlin.version>
         <java.version>21</java.version>
 
-        <common.version>4.2026.06.25_10.50-baa9d54e3cd8</common.version>
-        <kotest.version>6.2.1</kotest.version>
+        <common.version>4.2026.07.17_11.36-f5bba2c96561</common.version>
+        <kotest.version>6.2.2</kotest.version>
         <mockk.version>1.14.11</mockk.version>
         <testcontainers.version>2.0.5</testcontainers.version>
         <token-support.version>6.0.11</token-support.version> <!-- NB keep in sync with spring-boot (for token-validation-spring) -->
-        <nimbus.version>11.37.2</nimbus.version> <!-- NB keep in sync with token support-->
+        <nimbus.version>11.38.1</nimbus.version> <!-- NB keep in sync with token support-->
         <mockito-kotlin.version>6.3.0</mockito-kotlin.version>
         <wiremock.version>3.13.2</wiremock.version>
         <schedlock.version>7.7.0</schedlock.version>
@@ -296,7 +296,7 @@
         <dependency>
             <groupId>io.getunleash</groupId>
             <artifactId>unleash-client-java</artifactId>
-            <version>12.2.2</version>
+            <version>12.2.3</version>
         </dependency>
         <dependency>
             <groupId>org.jetbrains.kotlinx</groupId>
