@@ -32,6 +32,10 @@ spec:
   azure:
     application:
       enabled: true
+      allowAllUsers: false
+      claims:
+        groups:
+          - id: 4cef0954-8ed7-498b-ac14-41e197eb4050
   kafka:
     pool: nav-prod
   observability:
