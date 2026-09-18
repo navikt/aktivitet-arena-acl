@@ -34,7 +34,7 @@ class AdminController(
 	@ApiResponses(value = [
 		ApiResponse(responseCode = "200", description = "Mapping returnert"),
 	])
-	@GetMapping(value = ["/deltaker/{deltakerId}/mapping"], produces = ["application/json"])
+	@GetMapping(value = ["/deltaker/mapping"], produces = ["application/json"])
 	fun hentDeltakerAktivitetMapping(
 		@Parameter(description = "Funksjonell id", required = false, `in` = ParameterIn.QUERY)
 		@RequestParam(required = false) funksjonellId: UUID?,
