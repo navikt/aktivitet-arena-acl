@@ -13,7 +13,7 @@
     <parent>
         <artifactId>spring-boot-starter-parent</artifactId>
         <groupId>org.springframework.boot</groupId>
-        <version>4.0.6</version>
+        <version>4.1.1</version>
     </parent>
 
     <properties>
@@ -23,15 +23,15 @@
         <kotlin.version>2.3.20</kotlin.version>
         <java.version>21</java.version>
 
-        <common.version>4.2026.05.05_06.25-f72fab488a93</common.version>
-        <kotest.version>6.1.11</kotest.version>
-        <mockk.version>1.14.9</mockk.version>
+        <common.version>4.2026.09.01_09.49-e681e09ca089</common.version>
+        <kotest.version>6.2.5</kotest.version>
+        <mockk.version>1.14.11</mockk.version>
         <testcontainers.version>2.0.5</testcontainers.version>
-        <token-support.version>6.0.6</token-support.version> <!-- NB keep in sync with spring-boot (for token-validation-spring) -->
-        <nimbus.version>11.37</nimbus.version> <!-- NB keep in sync with token support-->
+        <token-support.version>6.0.12</token-support.version> <!-- NB keep in sync with spring-boot (for token-validation-spring) -->
+        <nimbus.version>11.38.2</nimbus.version> <!-- NB keep in sync with token support-->
         <mockito-kotlin.version>6.3.0</mockito-kotlin.version>
         <wiremock.version>3.13.2</wiremock.version>
-        <schedlock.version>7.7.0</schedlock.version>
+        <schedlock.version>7.10.1</schedlock.version>
 
         <sonar.projectKey>navikt_aktivitet-arena-acl</sonar.projectKey>
         <sonar.organization>navikt</sonar.organization>
@@ -69,7 +69,12 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.14</version>
+                <version>0.8.15</version>
+            </plugin>
+            <plugin>
+                <groupId>org.sonarsource.scanner.maven</groupId>
+                <artifactId>sonar-maven-plugin</artifactId>
+                <version>5.8.0.7211</version>
             </plugin>
         </plugins>
     </build>
@@ -102,7 +107,7 @@
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp-jvm</artifactId>
-            <version>5.3.2</version>
+            <version>5.5.0</version>
         </dependency>
         <dependency>
             <groupId>com.nimbusds</groupId>
@@ -190,7 +195,7 @@
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>3.0.3</version>
+            <version>3.1.1</version>
         </dependency>
 
         <!-- TEST DEPENDENCIES -->
@@ -291,12 +296,12 @@
         <dependency>
             <groupId>io.getunleash</groupId>
             <artifactId>unleash-client-java</artifactId>
-            <version>12.2.1</version>
+            <version>12.3.0</version>
         </dependency>
         <dependency>
             <groupId>org.jetbrains.kotlinx</groupId>
             <artifactId>kotlinx-coroutines-core</artifactId>
-            <version>1.10.2</version>
+            <version>1.11.0</version>
         </dependency>
     </dependencies>
 
