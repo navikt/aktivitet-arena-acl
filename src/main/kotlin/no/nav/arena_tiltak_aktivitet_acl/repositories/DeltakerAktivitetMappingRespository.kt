@@ -43,6 +43,24 @@ open class DeltakerAktivitetMappingRespository(
 			.firstOrNull()
 	}
 
+	open fun getAllByDeltakelseId(deltakelseId: DeltakelseId): List<DeltakerAktivitetMappingDbo> {
+		val sql = """
+			SELECT DISTINCT ON (deltaker_id, aktivitet_kategori)
+				deltaker_id,
+				aktivitetskort_id,
+				aktivitet_kategori,
+				oppfolgingsperiode_id,
+				oppfolgingsperioder.slutt as slutt,
+				COALESCE(oppfolgingsperioder.slutt, TO_TIMESTAMP('9999', 'YYYY')) slutt_sort
+			FROM deltaker_aktivitet_mapping
+			JOIN oppfolgingsperioder ON deltaker_aktivitet_mapping.oppfolgingsperiode_id = oppfolgingsperioder.id
+			WHERE deltaker_id = :deltaker_id
+			ORDER BY deltaker_id, aktivitet_kategori, slutt_sort desc
+		""".trimIndent()
+		val parameters = mapOf("deltaker_id" to deltakelseId.value)
+		return template.query(sql, parameters) { row, _ -> row.toDbo() }
+	}
+
 	open fun insert(dbo: DeltakerAktivitetMappingDbo): Int {
 		val sql = """
 			INSERT INTO deltaker_aktivitet_mapping(deltaker_id, aktivitetskort_id, aktivitet_kategori, oppfolgingsperiode_id)

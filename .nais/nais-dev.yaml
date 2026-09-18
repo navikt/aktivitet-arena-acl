@@ -48,6 +48,11 @@ spec:
         - application: tiltaksgjennomforing-api
           namespace: arbeidsgiver
           cluster: dev-fss
+        - application: poao-admin
+          namespace: poao
+          permissions:
+            scopes:
+              - "admin"
     outbound:
       rules:
         - application: amt-enhetsregister
