@@ -216,6 +216,17 @@ open class ArenaDataRepository(
 		return template.query(sql, arenaDataRowMapper)
 	}
 
+	fun getAllByArenaIdOrderedByOperationPos(arenaId: String): List<ArenaDataDbo> {
+		//language=PostgreSQL
+		val sql = """
+			SELECT *
+			FROM arena_data
+			WHERE arena_id = :arena_id
+			ORDER BY operation_pos ASC
+		""".trimIndent()
+		return template.query(sql, mapOf("arena_id" to arenaId), arenaDataRowMapper)
+	}
+
 	fun deleteAllIgnoredData(): Int {
 		//language=PostgreSQL
 		val sql = """
