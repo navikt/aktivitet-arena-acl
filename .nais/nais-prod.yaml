@@ -32,12 +32,6 @@ spec:
   azure:
     application:
       enabled: true
-      allowedApplications:
-        - application: poao-admin
-          namespace: poao
-          permissions:
-            scopes:
-              - "admin"
   kafka:
     pool: nav-prod
   observability:
