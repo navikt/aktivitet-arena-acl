@@ -24,7 +24,7 @@
         <java.version>21</java.version>
         <tomcat.version>11.0.26</tomcat.version>
 
-        <common.version>4.2026.09.01_09.49-e681e09ca089</common.version>
+        <common.version>4.2026.09.24_06.17-80dfc0eacb29</common.version>
         <kotest.version>6.2.5</kotest.version>
         <mockk.version>1.14.11</mockk.version>
         <testcontainers.version>2.0.5</testcontainers.version>
