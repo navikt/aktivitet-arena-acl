@@ -36,6 +36,9 @@ spec:
   kafka:
     pool: nav-dev
   observability:
+    autoInstrumentation:
+      enabled: true
+      runtime: java
     logging:
       destinations:
         - id: elastic
