@@ -46,6 +46,9 @@ spec:
   accessPolicy:
     inbound:
       rules:
+        - application: azure-token-generator
+          namespace: nais
+          cluster: dev-gcp
         - application: amt-aktivitetskort-publisher
           namespace: amt
           cluster: dev-gcp
