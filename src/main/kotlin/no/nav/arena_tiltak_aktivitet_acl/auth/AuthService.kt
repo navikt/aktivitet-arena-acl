@@ -1,15 +1,18 @@
 package no.nav.arena_tiltak_aktivitet_acl.auth
 
 import no.nav.security.token.support.core.context.TokenValidationContextHolder
+import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
 import java.util.*
 
 @Service
+
 open class AuthService(
 	private val tokenValidationContextHolder: TokenValidationContextHolder
 ) {
+	private val log = LoggerFactory.getLogger(javaClass)
 
 	fun claims() = tokenValidationContextHolder.getTokenValidationContext().getClaims(Issuer.AZURE_AD)
 	open fun hentAzureIdTilInnloggetBruker(): UUID = claims()
@@ -18,6 +21,13 @@ open class AuthService(
 			HttpStatus.UNAUTHORIZED,
 			"oid is missing"
 		)
+
+	open fun erAdmin(): Boolean {
+		return claims()
+			.getAsList("scp")
+			.also { log.debug("scopes: $it") }
+			.contains("admin")
+	}
 
 	open fun harM2MRolleIToken(): Boolean = claims()
 		.getAsList("roles")

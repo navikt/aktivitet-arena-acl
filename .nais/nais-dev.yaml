@@ -50,8 +50,8 @@ spec:
           namespace: nais
           cluster: dev-gcp
           permissions:
-            - scopes:
-                - "admin"
+            scopes:
+              - "admin"
         - application: amt-aktivitetskort-publisher
           namespace: amt
           cluster: dev-gcp
