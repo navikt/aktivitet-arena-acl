@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
+import no.nav.arena_tiltak_aktivitet_acl.auth.AuthService
 import no.nav.arena_tiltak_aktivitet_acl.auth.Issuer
 import no.nav.arena_tiltak_aktivitet_acl.repositories.ArenaDataRepository
 import no.nav.arena_tiltak_aktivitet_acl.repositories.DeltakerAktivitetMappingRespository
@@ -27,9 +28,10 @@ import java.util.UUID
 class AdminController(
 	private val arenaDataRepository: ArenaDataRepository,
 	private val deltakerAktivitetMappingRepository: DeltakerAktivitetMappingRespository,
+	private val authService: AuthService
 ) {
 
-	@ProtectedWithClaims(issuer = Issuer.AZURE_AD, claimMap = ["scp=admin"])
+	@ProtectedWithClaims(issuer = Issuer.AZURE_AD)
 	@Operation(summary = "Hent deltaker_aktivitet_mapping for funksjonellId eller oppfolgingsperiodeId")
 	@ApiResponses(value = [
 		ApiResponse(responseCode = "200", description = "Mapping returnert"),
@@ -41,6 +43,9 @@ class AdminController(
 		@Parameter(description = "Oppfolgingsperiode id", required = false, `in` = ParameterIn.QUERY)
 		@RequestParam(required = false) oppfolgingsperiodeId: UUID?,
 	): List<AdminDeltakerAktivitetMappingDto> {
+		if(!authService.erAdmin()) {
+			throw ResponseStatusException(HttpStatus.FORBIDDEN, "Action only permitted by admin")
+		}
 		val hasFunksjonellId = funksjonellId != null
 		val hasOppfolgingsperiodeId = oppfolgingsperiodeId != null
 		if (hasFunksjonellId == hasOppfolgingsperiodeId) {
@@ -54,7 +59,7 @@ class AdminController(
 		return result.map { it.toAdminDeltakerAktivitetMappingDto() }
 	}
 
-	@ProtectedWithClaims(issuer = Issuer.AZURE_AD, claimMap = ["scp=admin"])
+	@ProtectedWithClaims(issuer = Issuer.AZURE_AD)
 	@Operation(summary = "Hent arena_data for arenaId")
 	@ApiResponses(value = [
 		ApiResponse(responseCode = "200", description = "Arena data returnert"),
@@ -64,6 +69,9 @@ class AdminController(
 		@Parameter(description = "ArenaId / deltakelseId")
 		@PathVariable arenaId: String,
 	): List<AdminArenaDataDto> {
+		if (!authService.erAdmin()) {
+			throw ResponseStatusException(HttpStatus.FORBIDDEN, "Action only permitted by admin")
+		}
 		return arenaDataRepository.getAllByArenaIdOrderedByOperationPos(arenaId).map { it.toAdminArenaDataDto() }
 	}
 }
