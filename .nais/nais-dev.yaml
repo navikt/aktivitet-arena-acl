@@ -49,6 +49,9 @@ spec:
         - application: azure-token-generator
           namespace: nais
           cluster: dev-gcp
+          permissions:
+            - scopes:
+                - "admin"
         - application: amt-aktivitetskort-publisher
           namespace: amt
           cluster: dev-gcp
