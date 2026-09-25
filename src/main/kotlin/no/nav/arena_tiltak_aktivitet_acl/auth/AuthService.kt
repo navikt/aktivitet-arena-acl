@@ -24,7 +24,7 @@ open class AuthService(
 
 	open fun erAdmin(): Boolean {
 		return claims()
-			.getAsList("scp")
+			.getStringClaim("scp")
 			.also { log.debug("scopes: $it") }
 			.contains("admin")
 	}
