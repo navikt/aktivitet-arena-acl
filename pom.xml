@@ -13,7 +13,7 @@
     <parent>
         <artifactId>spring-boot-starter-parent</artifactId>
         <groupId>org.springframework.boot</groupId>
-        <version>4.1.1</version>
+        <version>4.1.2</version>
     </parent>
 
     <properties>
@@ -108,7 +108,7 @@
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp-jvm</artifactId>
-            <version>5.5.0</version>
+            <version>5.5.1</version>
         </dependency>
         <dependency>
             <groupId>com.nimbusds</groupId>
@@ -297,7 +297,7 @@
         <dependency>
             <groupId>io.getunleash</groupId>
             <artifactId>unleash-client-java</artifactId>
-            <version>12.3.0</version>
+            <version>12.3.1</version>
         </dependency>
         <dependency>
             <groupId>org.jetbrains.kotlinx</groupId>
