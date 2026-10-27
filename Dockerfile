@@ -4,4 +4,4 @@ WORKDIR /app
 COPY /target/aktivitet-arena-acl.jar app.jar
 ENV TZ="Europe/Oslo"
 EXPOSE 8080
-CMD ["app.jar"]
+CMD ["-jar", "app.jar"]
