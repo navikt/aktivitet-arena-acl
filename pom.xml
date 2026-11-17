@@ -24,14 +24,14 @@
         <java.version>21</java.version>
         <tomcat.version>11.0.26</tomcat.version>
         <common.version>4.2026.10.30_22.48-ed045c9bbfa2</common.version>
-        <kotest.version>6.2.6</kotest.version>
-        <mockk.version>1.14.11</mockk.version>
+        <kotest.version>6.2.7</kotest.version>
+        <mockk.version>1.14.12</mockk.version>
         <testcontainers.version>2.0.5</testcontainers.version>
         <token-support.version>6.0.12</token-support.version> <!-- NB keep in sync with spring-boot (for token-validation-spring) -->
         <nimbus.version>11.39</nimbus.version> <!-- NB keep in sync with token support-->
         <mockito-kotlin.version>6.4.0</mockito-kotlin.version>
         <wiremock.version>3.13.2</wiremock.version>
-        <schedlock.version>7.10.1</schedlock.version>
+        <schedlock.version>7.11.0</schedlock.version>
 
         <sonar.projectKey>navikt_aktivitet-arena-acl</sonar.projectKey>
         <sonar.organization>navikt</sonar.organization>
